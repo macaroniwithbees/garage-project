@@ -39,7 +39,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-200">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-100 via-white to-blue-200">
       <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
         <h1 className="text-3xl font-bold text-blue-800 mb-4">
           Welkom, {user.email}!
