@@ -3,6 +3,7 @@ import LoginForm from "@/components/LoginForm";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { Car } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
@@ -17,14 +18,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-linear-to-br from-blue-100 via-white to-blue-200 flex flex-col items-center justify-center p-6">
-      <div className="bg-white shadow-lg rounded-2xl p-10 max-w-md w-full text-center">
-        <h1 className="text-3xl font-bold text-blue-800 mb-4">AutoGarage Pro</h1>
-        <p className="text-gray-700 mb-6">
-          Welkom bij AutoGarage Pro! Log in om uw afspraken en reparaties te beheren.
-        </p>
+      <h1 className="text-3xl font-bold text-blue-800 mb-4"><Car className="inline mr-2" size={40} />AutoGarage Pro</h1>
 
-        <LoginForm />
-      </div>
+      <LoginForm />
     </main>
   );
 }
