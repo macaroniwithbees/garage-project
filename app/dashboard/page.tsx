@@ -40,14 +40,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-blue-50">
       <Navbar user={user} onLogout={handleLogout} />
 
       <div className="p-10">
         <h1 className="text-2xl font-bold text-gray-800 mb-4">
           Welkom, {user.email}!
         </h1>
-        <p className="text-gray-600">Dit is je dashboard.</p>
+        <p className="text-gray-600">Beheer uw afspraken en bekijk de status van uw auto</p>
       </div>
     </div>
   );
