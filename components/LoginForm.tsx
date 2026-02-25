@@ -55,7 +55,7 @@ export default function LoginForm() {
       </p>
 
       <p className="mt-4 text-center text-gray-400 hover:underline cursor-pointer">
-        &larr; Terug naar homepage
+        <a href="/">&larr; Terug naar homepage</a>
       </p>
     </div>
   );

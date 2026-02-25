@@ -30,7 +30,7 @@ export default function Dashboard() {
       alert("Fout bij uitloggen: " + error.message);
     } else {
       setUser(null);
-      router.push("/"); // terug naar home/login pagina
+      router.push("/"); // terug naar home pagina
     }
   };
 
