@@ -1,7 +1,7 @@
 "use client";
 
 import { User } from "@supabase/supabase-js";
-import { Car, CircleUser } from "lucide-react";
+import { Car, CircleUser, LogOut } from "lucide-react";
 
 type NavbarProps = {
   user: User;
@@ -28,17 +28,19 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
         {/* rechterzijde met gebruiker & uitloggen */}
         <div className="flex items-center gap-6 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <CircleUser />
-            <span className="font-medium">{displayName}</span>
-          </div>
+            <div className="flex items-center gap-2">
+                <CircleUser />
+                <span className="font-medium">{displayName}</span>
+            </div>
 
-          <button
-            onClick={onLogout}
-            className="hover:text-red-600 transition-colors"
-          >
-            Uitloggen
-          </button>
+            <div className="flex items-center gap-2 hover:text-red-600 transition-colors">
+                <LogOut />
+                <button
+                    onClick={onLogout}
+                >
+                    Uitloggen
+                </button>
+            </div>
         </div>
       </div>
     </nav>
