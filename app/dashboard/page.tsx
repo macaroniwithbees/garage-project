@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import Navbar from "@/components/Navbar";
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
@@ -39,19 +40,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-100 via-white to-blue-200">
-      <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
-        <h1 className="text-3xl font-bold text-blue-800 mb-4">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar user={user} onLogout={handleLogout} />
+
+      <div className="p-10">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">
           Welkom, {user.email}!
         </h1>
-        <p className="text-gray-700 mb-6">Dit is je dashboard.</p>
-
-        <button
-          onClick={handleLogout}
-          className="mt-4 w-full bg-red-500 text-white font-bold py-2 rounded hover:bg-red-600 transition-colors"
-        >
-          Uitloggen
-        </button>
+        <p className="text-gray-600">Dit is je dashboard.</p>
       </div>
     </div>
   );
