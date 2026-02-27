@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [type, setType] = useState<"success" | "error" | "">("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,8 +19,10 @@ export default function LoginForm() {
     });
 
     if (error) {
+      setType("error");
       setMessage("Fout bij inloggen: " + error.message);
     } else {
+      setType("success");
       setMessage(`Magic Link gestuurd! Check je e-mail om in te loggen bij ${email}`);
     }
   };
@@ -49,6 +52,20 @@ export default function LoginForm() {
           Stuur Magic Link
         </button>
       </form>
+
+      {message && (
+        <div
+          className={`mt-4 p-3 rounded-lg text-sm font-medium transition-all duration-300
+            ${
+              type === "success"
+                ? "bg-green-100 text-green-800 border border-green-300"
+                : "bg-red-100 text-red-800 border border-red-300"
+            }`}
+        >
+          {type === "success" ? "✓" : "×"}
+          {message}
+        </div>
+      )}
 
       <p className="mt-4 text-center text-gray-600">
         Nog geen account? <a href="/register" className="text-blue-600 font-medium">Registreer hier</a>
