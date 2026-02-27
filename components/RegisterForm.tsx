@@ -66,7 +66,7 @@ export default function RegisterForm() {
 
       <p className="mt-4 text-center text-gray-600">
         Heb je al een account?{" "}
-        <a href="/" className="text-blue-600 font-medium">
+        <a href="/login" className="text-blue-600 font-medium">
           Login hier
         </a>
       </p>
