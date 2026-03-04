@@ -6,9 +6,10 @@ import Link from "next/link";
 import Afspraak from "@/components/DashboardKlant/Afspraak";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 
 export default function Page() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   useEffect(() => {

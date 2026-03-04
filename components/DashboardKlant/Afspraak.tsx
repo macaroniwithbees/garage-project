@@ -45,28 +45,66 @@ export default function Afspraak() {
     setLoading(true);
     setError(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       setError("Je bent niet ingelogd.");
       setLoading(false);
       return;
     }
 
-    const { error: insertError } = await supabase.from("afspraken").insert({
-      user_id: user.id,
-      datum: form.datum,
-      dienst: form.dienst,
-      kenteken: form.kenteken,
-      merk: form.merk,
-      model: form.model,
-      opmerkingen: form.opmerkingen,
-      status: "in_afwachting",
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", user.email ?? "")
+      .single();
+
+    if (profileError || !profile) {
+      setError("Kon gebruikersprofiel niet vinden.");
+      setLoading(false);
+      return;
+    }
+
+    const dateParts = form.datum.split("/");
+    const formattedDate =
+      dateParts.length === 3
+        ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+        : form.datum;
+
+    const { data: appointment, error: insertError } = await supabase
+      .from("appointments")
+      .insert({
+        user_id: profile.id,
+        datum: formattedDate,
+        voertuig: `${form.merk} ${form.model} - ${form.kenteken}`,
+        opmerkingen: form.opmerkingen.trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (insertError) {
+      setError(insertError.message);
+      setLoading(false);
+      return;
+    }
+
+    const repairBeschrijving = [
+      form.dienst,
+      `${form.merk} ${form.model}`.trim(),
+      form.kenteken,
+      form.opmerkingen.trim(),
+    ].join(" | ");
+
+    const { error: repairError } = await supabase.from("repairs").insert({
+      appointment_id: appointment.id,
+      beschrijving: repairBeschrijving,
     });
 
     setLoading(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (repairError) {
+      setError(repairError.message);
       return;
     }
 

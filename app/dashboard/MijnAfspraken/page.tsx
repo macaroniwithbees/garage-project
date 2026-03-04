@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
 import MijnAfspraken from "@/components/DashboardKlant/MijnAfspraken";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function MijnAfsprakenPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   useEffect(() => {
