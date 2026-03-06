@@ -30,7 +30,7 @@ export default function AppointmentCard({ appointment, action, footer }: Appoint
 					{typeof appointment.betaald === "boolean" && (
 						<p className="mt-1 text-xl text-slate-600">
 							<span className="font-semibold text-slate-700">Betaald:</span>{" "}
-							{appointment.betaald ? "✅ Ja" : "❌ Nee"}
+							{appointment.betaald ? "Ja" : "Nee"}
 						</p>
 					)}
 				</div>

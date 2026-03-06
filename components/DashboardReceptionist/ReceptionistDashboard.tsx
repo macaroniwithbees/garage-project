@@ -111,8 +111,8 @@ export default function ReceptionistDashboard() {
 
 	const isAssignOpen = useMemo(() => selectedAppointment !== null, [selectedAppointment]);
 	const toConfirm = useMemo(() => appointments.filter((item) => item.status === "in_afwachting"), [appointments]);
-	const toAssign = useMemo(() => appointments.filter((item) => item.status === "bevestigd"), [appointments]);
-	const inProgress = useMemo(() => appointments.filter((item) => item.status === "in_behandeling"), [appointments]);
+	const toAssign = useMemo(() => appointments.filter((item) => item.status === "ingepland"), [appointments]);
+	const inProgress = useMemo(() => appointments.filter((item) => item.status === "in behandeling"), [appointments]);
 	const readyForPickup = useMemo(() => appointments.filter((item) => item.status === "klaar_voor_ophalen"), [appointments]);
 
 	const updateStatusWithFallback = async (appointmentId: number, statusCandidates: string[], mechanicId?: number) => {
@@ -129,13 +129,13 @@ export default function ReceptionistDashboard() {
 	};
 
 	const handleConfirm = async (id: number) => {
-		const errorMessage = await updateStatusWithFallback(id, ["confirmed", "bevestigd"]);
+		const errorMessage = await updateStatusWithFallback(id, ["confirmed", "ingepland"]);
 		if (errorMessage) {
 			setErrorText(`Bevestigen mislukt: ${errorMessage}`);
 			return;
 		}
 		setAppointments((previous) =>
-			previous.map((item) => (item.id === id ? { ...item, status: "bevestigd", opmerkingen: undefined } : item)),
+			previous.map((item) => (item.id === id ? { ...item, status: "ingepland", opmerkingen: undefined } : item)),
 		);
 	};
 
@@ -157,7 +157,11 @@ export default function ReceptionistDashboard() {
 		if (!mechanic) return;
 
 		void (async () => {
-			const errorMessage = await updateStatusWithFallback(selectedAppointment.id, ["in_progress", "in_behandeling"], mechanicId);
+			const errorMessage = await updateStatusWithFallback(
+				selectedAppointment.id,
+				["in behandeling", "in_behandeling", "in_progress"],
+				mechanicId,
+			);
 
 			if (errorMessage) {
 				setErrorText(`Monteur toewijzen mislukt: ${errorMessage}`);
@@ -166,7 +170,7 @@ export default function ReceptionistDashboard() {
 
 			setAppointments((previous) =>
 				previous.map((item) =>
-					item.id === selectedAppointment.id ? { ...item, status: "in_behandeling", monteur: mechanic.naam } : item,
+					item.id === selectedAppointment.id ? { ...item, status: "in behandeling", monteur: mechanic.naam } : item,
 				),
 			);
 

@@ -1,4 +1,4 @@
-export type AppointmentStatus = "in_afwachting" | "bevestigd" | "in_behandeling" | "klaar_voor_ophalen";
+export type AppointmentStatus = "in_afwachting" | "ingepland" | "in behandeling" | "klaar_voor_ophalen";
 
 export type ReceptionistAppointment = {
 	id: number;

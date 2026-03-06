@@ -6,11 +6,11 @@ export default function StatusBadge({ status }: { status: AppointmentStatus }) {
 			label: "In afwachting",
 			className: "bg-amber-100 text-amber-700",
 		},
-		bevestigd: {
-			label: "Bevestigd",
+		ingepland: {
+			label: "ingepland",
 			className: "bg-blue-100 text-blue-700",
 		},
-		in_behandeling: {
+		"in behandeling": {
 			label: "In behandeling",
 			className: "bg-purple-100 text-purple-700",
 		},
