@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 import Navbar from "@/components/Navbar";
 import { CalendarDays, FileText } from "lucide-react";
+import Link from "next/link";
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,7 +45,6 @@ export default function Dashboard() {
       <Navbar user={user} onLogout={handleLogout} />
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        
         {/* header */}
         <h1 className="text-2xl font-bold text-gray-800 mb-2">
           Welkom, {name}!
@@ -54,28 +55,29 @@ export default function Dashboard() {
 
         {/* actie kaarten */}
         <div className="grid md:grid-cols-2 gap-6 mb-10">
-          
-          {/* afspraak maken */}
-          <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
-            <div className="bg-blue-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
-              <CalendarDays className="text-blue-600" />
+          <Link href="/dashboard/AfspraakMaken" className="block">
+            <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
+              <div className="bg-blue-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
+                <CalendarDays className="text-blue-600" />
+              </div>
+              <h2 className="text-gray-800 font-semibold text-lg mb-2">Afspraak Maken</h2>
+              <p className="text-gray-600 text-sm">
+                Plan een nieuwe afspraak voor onderhoud, reparatie of APK keuring
+              </p>
             </div>
-            <h2 className="text-gray-800 font-semibold text-lg mb-2">Afspraak Maken</h2>
-            <p className="text-gray-600 text-sm">
-              Plan een nieuwe afspraak voor onderhoud, reparatie of APK keuring
-            </p>
-          </div>
+          </Link>
 
-          {/* mijn afspraken */}
-          <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
-            <div className="bg-green-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
-              <FileText className="text-green-600" />
+          <Link href="/dashboard/MijnAfspraken" className="block">
+            <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
+              <div className="bg-green-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
+                <FileText className="text-green-600" />
+              </div>
+              <h2 className="text-gray-800 font-semibold text-lg mb-2">Mijn Afspraken</h2>
+              <p className="text-gray-600 text-sm">
+                Bekijk de status van uw afspraken, facturen en laat een review achter
+              </p>
             </div>
-            <h2 className="text-gray-800 font-semibold text-lg mb-2">Mijn Afspraken</h2>
-            <p className="text-gray-600 text-sm">
-              Bekijk de status van uw afspraken, facturen en laat een review achter
-            </p>
-          </div>
+          </Link>
         </div>
 
         {/* hoe werkt het */}
@@ -83,8 +85,7 @@ export default function Dashboard() {
           <h2 className="text-gray-800 font-semibold text-lg mb-6">Hoe werkt het?</h2>
 
           <div className="grid md:grid-cols-4 gap-6 text-center">
-            
-            {[
+            { [
               {
                 step: 1,
                 title: "Maak Afspraak",
@@ -113,7 +114,7 @@ export default function Dashboard() {
                 <h3 className="text-gray-800 font-bold mb-1">{item.title}</h3>
                 <p className="text-gray-600 text-sm">{item.desc}</p>
               </div>
-            ))}
+            )) }
           </div>
         </div>
       </div>
