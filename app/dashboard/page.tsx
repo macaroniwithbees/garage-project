@@ -54,7 +54,7 @@ export default function Dashboard() {
         </p>
 
         {/* actie kaarten */}
-        <div className="grid md:grid-cols-2 gap-6 mb-10">
+        <div className="grid md:grid-cols-3 gap-6 mb-10">
           <Link href="/dashboard/AfspraakMaken" className="block">
             <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
               <div className="bg-blue-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
@@ -75,6 +75,18 @@ export default function Dashboard() {
               <h2 className="text-gray-800 font-semibold text-lg mb-2">Mijn Afspraken</h2>
               <p className="text-gray-600 text-sm">
                 Bekijk de status van uw afspraken, facturen en laat een review achter
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/monteur" className="block">
+            <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
+              <div className="bg-purple-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
+                <CalendarDays className="text-purple-600" />
+              </div>
+              <h2 className="text-gray-800 font-semibold text-lg mb-2">Monteur Dashboard</h2>
+              <p className="text-gray-600 text-sm">
+                Bekijk alle afspraken en werkzaamheden van monteurs
               </p>
             </div>
           </Link>

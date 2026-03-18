@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -66,13 +67,13 @@ export default function RegisterForm() {
 
       <p className="mt-4 text-center text-gray-600">
         Heb je al een account?{" "}
-        <a href="/login" className="text-blue-600 font-medium">
+        <Link href="/login" className="text-blue-600 font-medium">
           Login hier
-        </a>
+        </Link>
       </p>
 
       <p className="mt-4 text-center text-gray-400 hover:underline cursor-pointer">
-        <a href="/">&larr; Terug naar homepage</a>
+        <Link href="/">&larr; Terug naar homepage</Link>
       </p>
     </div>
   );

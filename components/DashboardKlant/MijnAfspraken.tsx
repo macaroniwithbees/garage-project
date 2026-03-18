@@ -26,7 +26,7 @@ const statusConfig: Record<Status, { label: string; bg: string; text: string }> 
 
 function normalizeStatus(status: string | null): Status {
   if (status === "bevestigd" || status === "confirmed") return "bevestigd";
-  if (status === "in_behandeling" || status === "in_progress") return "in_behandeling";
+  if (status === "in behandeling" || status === "in_behandeling" || status === "in_progress") return "in_behandeling";
   if (status === "klaar_voor_ophalen" || status === "ready_for_pickup") return "klaar_voor_ophalen";
   return "in_afwachting";
 }
