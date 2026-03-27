@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Car, CheckCircle2, CircleUserRound, LogOut, UserRoundPlus } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import AppointmentCard from "./AppointmentCard";
@@ -192,6 +193,12 @@ export default function ReceptionistDashboard() {
 						<span className="text-[38px] font-bold">AutoGarage Pro</span>
 					</div>
 					<div className="flex items-center gap-6 text-xl">
+						<Link
+							href="/dashboard"
+							className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-700 hover:bg-slate-100"
+						>
+							Terug naar Dashboard
+						</Link>
 						<div className="flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2 text-blue-700">
 							<CircleUserRound size={20} />
 							<span className="font-medium">{profileName}</span>

@@ -3,7 +3,14 @@ import type { AppointmentRow, AppointmentStatus } from "./types";
 export const normalizeStatus = (status: string | null | undefined): AppointmentStatus => {
     if (status === "ingepland" || status === "confirmed") return "ingepland";
     if (status === "in behandeling") return "in behandeling";
-    if (status === "klaar_voor_ophalen" || status === "ready_for_pickup") return "klaar_voor_ophalen";
+    if (
+        status === "klaar_voor_ophalen" ||
+        status === "ready_for_pickup" ||
+        status === "klaar" ||
+        status === "afgerond" ||
+        status === "completed"
+    )
+        return "klaar_voor_ophalen";
     return "in_afwachting";
 };
 

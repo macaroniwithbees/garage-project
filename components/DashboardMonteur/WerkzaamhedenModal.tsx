@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { createPortal } from "react-dom";
 
 const UURTARIEF = 75;
 
@@ -72,6 +73,7 @@ export default function WerkzaamhedenModal({
 	}, [open]);
 
 	if (!open || appointmentId === null) return null;
+	if (typeof document === "undefined") return null;
 
 	const toggleHandeling = (handeling: string) => {
 		setSelectedHandelingen((prev) =>
@@ -145,13 +147,21 @@ export default function WerkzaamhedenModal({
 			);
 			if (invoiceError) throw new Error(`Factuur opslaan mislukt: ${invoiceError.message}`);
 
-			// Update appointment status (leave as in_progress since there's no "completed" status in enum)
-			// The completion is indicated by the presence of repair and invoice records
-			// const { error: statusError } = await supabase
-			// 	.from("appointments")
-			// 	.update({ status: "ready_for_pickup" })
-			// 	.eq("id", appointmentId);
-			// if (statusError) throw new Error(`Status bijwerken mislukt: ${statusError.message}`);
+			// Update appointment status.
+			// Some DBs only allow "klaar" (enum). Receptionist dashboard will normalize "klaar" to "klaar_voor_ophalen".
+			const statusCandidates = ["klaar_voor_ophalen", "ready_for_pickup", "klaar"];
+			let lastStatusError: string | null = null;
+
+			for (const statusValue of statusCandidates) {
+				const { error: statusError } = await supabase.from("appointments").update({ status: statusValue }).eq("id", appointmentId);
+				if (!statusError) {
+					lastStatusError = null;
+					break;
+				}
+				lastStatusError = statusError.message;
+			}
+
+			if (lastStatusError) throw new Error(`Status bijwerken mislukt: ${lastStatusError}`);
 
 			onCompleted(appointmentId);
 		} catch (err) {
@@ -161,9 +171,31 @@ export default function WerkzaamhedenModal({
 		}
 	};
 
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-			<div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-8 shadow-2xl">
+	return createPortal(
+		<div
+			style={{
+				position: "fixed",
+				top: 0,
+				left: 0,
+				right: 0,
+				bottom: 0,
+				zIndex: 9999,
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				backgroundColor: "rgba(100, 116, 139, 0.5)",
+				backdropFilter: "blur(4px)",
+				padding: "16px",
+			}}
+			onClick={onClose}
+		>
+			<div
+				role="dialog"
+				aria-modal="true"
+				className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+				onClick={(event) => event.stopPropagation()}
+			>
+				<div className="relative shrink-0 px-8 pt-8">
 				<button
 					type="button"
 					onClick={onClose}
@@ -172,16 +204,25 @@ export default function WerkzaamhedenModal({
 					<X size={24} />
 				</button>
 
-				<h2 className="text-3xl font-bold text-slate-900">Werkzaamheden Registreren</h2>
-				<p className="mt-1 text-lg text-blue-600">{voertuig}</p>
+				<h2 className="text-3xl font-bold" style={{ color: "#0f172a" }}>
+					Werkzaamheden Registreren
+				</h2>
+				<p className="mt-1 text-lg" style={{ color: "#2563eb" }}>
+					{voertuig}
+				</p>
 
 				{errorText && <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-red-600">{errorText}</p>}
+				</div>
+
+				<div className="min-h-0 flex-1 overflow-y-auto px-8 pb-6">
 
 				{/* Two columns */}
-				<div className="mt-6 grid grid-cols-2 gap-6">
+				<div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
 					{/* Standaard Handelingen */}
 					<div>
-						<h3 className="mb-3 text-xl font-bold text-slate-800">Standaard Handelingen</h3>
+						<h3 className="mb-3 text-xl font-bold" style={{ color: "#0f172a" }}>
+							Standaard Handelingen
+						</h3>
 						<div className="space-y-2">
 							{STANDAARD_HANDELINGEN.map((handeling) => (
 								<label key={handeling} className="flex cursor-pointer items-center gap-3">
@@ -199,7 +240,9 @@ export default function WerkzaamhedenModal({
 
 					{/* Materialen */}
 					<div>
-						<h3 className="mb-3 text-xl font-bold text-slate-800">Materialen / Onderdelen</h3>
+						<h3 className="mb-3 text-xl font-bold" style={{ color: "#0f172a" }}>
+							Materialen / Onderdelen
+						</h3>
 						{materials.length === 0 ? (
 							<p className="text-base text-slate-500">Geen materialen beschikbaar</p>
 						) : (
@@ -237,21 +280,34 @@ export default function WerkzaamhedenModal({
 
 				{/* Geselecteerde Werkzaamheden */}
 				<div className="mt-6">
-					<h3 className="mb-2 text-xl font-bold text-slate-800">Geselecteerde Werkzaamheden</h3>
+					<h3 className="mb-2 text-xl font-bold" style={{ color: "#0f172a" }}>
+						Geselecteerde Werkzaamheden
+					</h3>
 					{selectedHandelingen.length === 0 && selectedMaterials.length === 0 ? (
 						<p className="text-center text-base text-slate-400">Geen werkzaamheden geselecteerd</p>
 					) : (
-						<ul className="space-y-1 text-base text-slate-700">
+						<ul
+							className="text-base text-slate-700"
+							style={{
+								display: "grid",
+								gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+								columnGap: "24px",
+								rowGap: "8px",
+								alignItems: "start",
+							}}
+						>
 							{selectedHandelingen.map((h) => (
-								<li key={h} className="flex items-center gap-2">
+								<li key={h} className="flex min-w-0 items-center gap-2">
 									<CheckCircle2 size={16} className="text-green-500" />
-									{h}
+									<span className="min-w-0 truncate">{h}</span>
 								</li>
 							))}
 							{selectedMaterials.map((m) => (
-								<li key={m.material.id} className="flex items-center gap-2">
+								<li key={m.material.id} className="flex min-w-0 items-center gap-2">
 									<CheckCircle2 size={16} className="text-blue-500" />
-									{m.material.naam} × {m.hoeveelheid} = €{(m.material.prijs * m.hoeveelheid).toFixed(2)}
+									<span className="min-w-0 truncate">
+										{m.material.naam} × {m.hoeveelheid} = €{(m.material.prijs * m.hoeveelheid).toFixed(2)}
+									</span>
 								</li>
 							))}
 						</ul>
@@ -260,7 +316,9 @@ export default function WerkzaamhedenModal({
 
 				{/* Gewerkte Uren */}
 				<div className="mt-6">
-					<label className="mb-2 block text-xl font-bold text-slate-800">Gewerkte Uren</label>
+					<label className="mb-2 block text-xl font-bold" style={{ color: "#0f172a" }}>
+						Gewerkte Uren
+					</label>
 					<div className="flex items-center gap-3">
 						<input
 							type="number"
@@ -278,7 +336,9 @@ export default function WerkzaamhedenModal({
 
 				{/* Opmerkingen */}
 				<div className="mt-6">
-					<label className="mb-2 block text-xl font-bold text-slate-800">Opmerkingen voor Klant</label>
+					<label className="mb-2 block text-xl font-bold" style={{ color: "#0f172a" }}>
+						Opmerkingen voor Klant
+					</label>
 					<textarea
 						value={opmerkingen}
 						onChange={(e) => setOpmerkingen(e.target.value)}
@@ -290,30 +350,71 @@ export default function WerkzaamhedenModal({
 
 				{/* Totaal */}
 				<div className="mt-6 flex items-center justify-between rounded-xl bg-slate-100 px-6 py-4">
-					<span className="text-2xl font-bold text-slate-900">Totaal</span>
-					<span className="text-2xl font-bold text-blue-600">€{totaal.toFixed(2)}</span>
+					<span className="text-2xl font-bold" style={{ color: "#0f172a" }}>
+						Totaal
+					</span>
+					<span className="text-2xl font-bold" style={{ color: "#2563eb" }}>
+						€{totaal.toFixed(2)}
+					</span>
+				</div>
 				</div>
 
 				{/* Buttons */}
-				<div className="mt-6 grid grid-cols-2 gap-4">
-					<button
-						type="button"
-						onClick={onClose}
-						disabled={saving}
-						className="rounded-xl border border-slate-300 py-3 text-lg font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+				<div
+					style={{
+						flexShrink: 0,
+						borderTop: "1px solid #e2e8f0",
+						backgroundColor: "#ffffff",
+						padding: "24px 32px",
+					}}
+				>
+					<div
+						style={{
+							display: "grid",
+							gridTemplateColumns: "1fr 1fr",
+							gap: "16px",
+						}}
 					>
-						Annuleren
-					</button>
-					<button
-						type="button"
-						onClick={handleSave}
-						disabled={saving}
-						className="rounded-xl bg-green-500 py-3 text-lg font-medium text-white hover:bg-green-600 disabled:opacity-50"
-					>
-						{saving ? "Opslaan..." : "Voltooien & Opslaan"}
-					</button>
+						<button
+							type="button"
+							onClick={onClose}
+							disabled={saving}
+							style={{
+								borderRadius: "16px",
+								border: "1px solid #cbd5e1",
+								padding: "16px",
+								fontSize: "1.125rem",
+								fontWeight: 500,
+								color: "#0f172a",
+								backgroundColor: "#ffffff",
+								cursor: saving ? "not-allowed" : "pointer",
+								opacity: saving ? 0.6 : 1,
+							}}
+						>
+							Annuleren
+						</button>
+						<button
+							type="button"
+							onClick={handleSave}
+							disabled={saving}
+							style={{
+								borderRadius: "16px",
+								border: "none",
+								padding: "16px",
+								fontSize: "1.125rem",
+								fontWeight: 500,
+								color: "#ffffff",
+								backgroundColor: saving ? "#86efac" : "#22c55e",
+								cursor: saving ? "not-allowed" : "pointer",
+								opacity: saving ? 0.8 : 1,
+							}}
+						>
+							{saving ? "Opslaan..." : "Voltooien & Opslaan"}
+						</button>
+					</div>
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body,
 	);
 }
