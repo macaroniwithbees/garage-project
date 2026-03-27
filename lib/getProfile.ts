@@ -1,8 +1,6 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { createClient } from './supabase/server'
 
-export async function getUserRole() {
+export async function getUserProfile() {
   const supabase = await createClient()
 
   const {
@@ -17,5 +15,8 @@ export async function getUserRole() {
     .eq('id', user.id)
     .single()
 
-  return profile?.role ?? null
+  return {
+    user,
+    role: profile?.role ?? null
+  }
 }
