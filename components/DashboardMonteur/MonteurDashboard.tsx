@@ -112,7 +112,7 @@ function MonteurAppointmentCard({ appointment, action }: AppointmentCardProps) {
           )}
         </div>
 
-        <div className="min-w-[260px] text-xl text-slate-600">
+        <div className="min-w-65 text-xl text-slate-600">
           {appointment.datum && (
             <p>
               <span className="font-semibold text-slate-700">Datum:</span>{" "}
@@ -366,7 +366,7 @@ export default function MonteurDashboard() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <header className="border-b border-slate-200 bg-white px-8 py-4">
-        <div className="mx-auto flex w-full max-w-[1250px] items-center justify-between">
+        <div className="mx-auto flex w-full max-w-312.5 items-center justify-between">
           <div className="flex items-center gap-3">
             <Car className="text-blue-600" />
             <span className="text-[38px] font-bold">AutoGarage Pro</span>
@@ -399,7 +399,7 @@ export default function MonteurDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1250px] px-8 py-10">
+      <main className="mx-auto max-w-312.5 px-8 py-10">
         <h1 className="text-5xl font-bold">Monteur Dashboard</h1>
         <p className="mt-3 text-2xl text-slate-600">
           Uw toegewezen afspraken en werkzaamheden
