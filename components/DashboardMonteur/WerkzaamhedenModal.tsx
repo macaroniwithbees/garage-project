@@ -192,47 +192,48 @@ export default function WerkzaamhedenModal({
 			<div
 				role="dialog"
 				aria-modal="true"
-				className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+				className="relative flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
 				onClick={(event) => event.stopPropagation()}
 			>
-				<div className="relative shrink-0 px-8 pt-8">
 				<button
 					type="button"
 					onClick={onClose}
-					className="absolute right-5 top-5 text-slate-400 hover:text-slate-700"
+					style={{ position: "absolute", right: 16, top: 16, zIndex: 10, color: "#334155" }}
+					className="hover:text-slate-900"
 				>
-					<X size={24} />
+					<X size={22} />
 				</button>
+				<div className="relative shrink-0 px-6 pt-5">
 
-				<h2 className="text-3xl font-bold" style={{ color: "#0f172a" }}>
+				<h2 className="text-2xl font-bold" style={{ color: "#0f172a" }}>
 					Werkzaamheden Registreren
 				</h2>
-				<p className="mt-1 text-lg" style={{ color: "#2563eb" }}>
+				<p className="text-sm" style={{ color: "#2563eb" }}>
 					{voertuig}
 				</p>
 
-				{errorText && <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-red-600">{errorText}</p>}
+				{errorText && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{errorText}</p>}
 				</div>
 
-				<div className="min-h-0 flex-1 overflow-y-auto px-8 pb-6">
+				<div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4">
 
 				{/* Two columns */}
-				<div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+				<div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
 					{/* Standaard Handelingen */}
 					<div>
-						<h3 className="mb-3 text-xl font-bold" style={{ color: "#0f172a" }}>
+						<h3 className="mb-2 text-base font-bold" style={{ color: "#0f172a" }}>
 							Standaard Handelingen
 						</h3>
-						<div className="space-y-2">
+						<div className="space-y-1">
 							{STANDAARD_HANDELINGEN.map((handeling) => (
-								<label key={handeling} className="flex cursor-pointer items-center gap-3">
+								<label key={handeling} className="flex cursor-pointer items-center gap-2">
 									<input
 										type="checkbox"
 										checked={selectedHandelingen.includes(handeling)}
 										onChange={() => toggleHandeling(handeling)}
-										className="h-4 w-4 rounded border-slate-300 accent-purple-600"
+										className="h-3.5 w-3.5 rounded border-slate-300 accent-purple-600"
 									/>
-									<span className="text-base text-slate-700">{handeling}</span>
+									<span className="text-sm text-slate-700">{handeling}</span>
 								</label>
 							))}
 						</div>
@@ -240,11 +241,11 @@ export default function WerkzaamhedenModal({
 
 					{/* Materialen */}
 					<div>
-						<h3 className="mb-3 text-xl font-bold" style={{ color: "#0f172a" }}>
+						<h3 className="mb-2 text-base font-bold" style={{ color: "#0f172a" }}>
 							Materialen / Onderdelen
 						</h3>
 						{materials.length === 0 ? (
-							<p className="text-base text-slate-500">Geen materialen beschikbaar</p>
+							<p className="text-sm text-slate-500">Geen materialen beschikbaar</p>
 						) : (
 							<div className="space-y-2">
 								{materials.map((material) => {
@@ -278,45 +279,56 @@ export default function WerkzaamhedenModal({
 					</div>
 				</div>
 
-				{/* Geselecteerde Werkzaamheden */}
-				<div className="mt-6">
-					<h3 className="mb-2 text-xl font-bold" style={{ color: "#0f172a" }}>
-						Geselecteerde Werkzaamheden
-					</h3>
-					{selectedHandelingen.length === 0 && selectedMaterials.length === 0 ? (
-						<p className="text-center text-base text-slate-400">Geen werkzaamheden geselecteerd</p>
-					) : (
-						<ul
-							className="text-base text-slate-700"
-							style={{
-								display: "grid",
-								gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-								columnGap: "24px",
-								rowGap: "8px",
-								alignItems: "start",
-							}}
-						>
-							{selectedHandelingen.map((h) => (
-								<li key={h} className="flex min-w-0 items-center gap-2">
-									<CheckCircle2 size={16} className="text-green-500" />
-									<span className="min-w-0 truncate">{h}</span>
-								</li>
-							))}
-							{selectedMaterials.map((m) => (
-								<li key={m.material.id} className="flex min-w-0 items-center gap-2">
-									<CheckCircle2 size={16} className="text-blue-500" />
-									<span className="min-w-0 truncate">
-										{m.material.naam} × {m.hoeveelheid} = €{(m.material.prijs * m.hoeveelheid).toFixed(2)}
-									</span>
-								</li>
-							))}
-						</ul>
-					)}
-				</div>
+{/* Geselecteerde Werkzaamheden */}
+<div className="mt-5">
+  <h3 className="mb-2 text-base font-bold" style={{ color: "#0f172a" }}>
+    Geselecteerde Werkzaamheden
+  </h3>
+
+  {selectedHandelingen.length === 0 && selectedMaterials.length === 0 ? (
+    <p className="text-center text-base text-slate-400">
+      Geen werkzaamheden geselecteerd
+    </p>
+  ) : (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px 16px" }}>
+      
+      {/* Handelingen */}
+      {selectedHandelingen.map((h) => (
+        <div key={h} style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+          <CheckCircle2 size={16} style={{ color: "#22c55e", flexShrink: 0 }} />
+          <span style={{ fontSize: "14px", color: "#334155", wordBreak: "break-word" }}>
+            {h}
+          </span>
+        </div>
+      	))}
+
+      {/* Materialen */}
+      {selectedMaterials.map((m) => (
+        <div key={m.material.id} style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <CheckCircle2 size={16} style={{ color: "#3b82f6", flexShrink: 0 }} />
+            <span style={{ fontSize: "14px", fontWeight: 500, color: "#1e293b", wordBreak: "break-word" }}>
+              {m.material.naam}
+            </span>
+          </div>
+
+          <div style={{ marginLeft: "24px", fontSize: "12px", color: "#64748b" }}>
+            {m.hoeveelheid} × €{m.material.prijs.toFixed(2)}
+          </div>
+
+          <div style={{ marginLeft: "24px", fontSize: "14px", fontWeight: 600, color: "#0f172a" }}>
+            €{(m.material.prijs * m.hoeveelheid).toFixed(2)}
+          </div>
+        </div>
+      ))}
+
+    </div>
+  )}
+</div>
 
 				{/* Gewerkte Uren */}
-				<div className="mt-6">
-					<label className="mb-2 block text-xl font-bold" style={{ color: "#0f172a" }}>
+				<div className="mt-4">
+					<label className="mb-1 block text-base font-bold" style={{ color: "#0f172a" }}>
 						Gewerkte Uren
 					</label>
 					<div className="flex items-center gap-3">
@@ -326,34 +338,34 @@ export default function WerkzaamhedenModal({
 							step={0.5}
 							value={uren}
 							onChange={(e) => setUren(Math.max(0.5, Number(e.target.value)))}
-							className="w-24 rounded-xl border border-slate-300 px-3 py-2 text-lg"
+							style={{ width: "80px", borderRadius: "8px", border: "1px solid #cbd5e1", padding: "6px 10px", fontSize: "16px", color: "#0f172a", textAlign: "center" }}
 						/>
-						<span className="text-base text-slate-600">
+						<span className="text-sm text-slate-600">
 							uur × €{UURTARIEF}/uur = €{arbeidskosten.toFixed(2)}
 						</span>
 					</div>
 				</div>
 
 				{/* Opmerkingen */}
-				<div className="mt-6">
-					<label className="mb-2 block text-xl font-bold" style={{ color: "#0f172a" }}>
+				<div className="mt-4">
+					<label className="mb-1 block text-base font-bold" style={{ color: "#0f172a" }}>
 						Opmerkingen voor Klant
 					</label>
 					<textarea
 						value={opmerkingen}
 						onChange={(e) => setOpmerkingen(e.target.value)}
-						rows={4}
+						rows={2}
 						placeholder="Bijv: Remblokken vervangen. Banden zijn bijna versleten, adviseren binnen 3 maanden te vervangen."
-						className="w-full rounded-xl border border-slate-300 px-4 py-3 text-base text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+						className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
 					/>
 				</div>
 
 				{/* Totaal */}
-				<div className="mt-6 flex items-center justify-between rounded-xl bg-slate-100 px-6 py-4">
-					<span className="text-2xl font-bold" style={{ color: "#0f172a" }}>
+				<div className="mt-4 flex items-center justify-between rounded-lg bg-slate-100 px-4 py-3">
+					<span className="text-lg font-bold" style={{ color: "#0f172a" }}>
 						Totaal
 					</span>
-					<span className="text-2xl font-bold" style={{ color: "#2563eb" }}>
+					<span className="text-lg font-bold" style={{ color: "#2563eb" }}>
 						€{totaal.toFixed(2)}
 					</span>
 				</div>
@@ -365,7 +377,7 @@ export default function WerkzaamhedenModal({
 						flexShrink: 0,
 						borderTop: "1px solid #e2e8f0",
 						backgroundColor: "#ffffff",
-						padding: "24px 32px",
+						padding: "16px 24px",
 					}}
 				>
 					<div
@@ -380,10 +392,10 @@ export default function WerkzaamhedenModal({
 							onClick={onClose}
 							disabled={saving}
 							style={{
-								borderRadius: "16px",
+								borderRadius: "12px",
 								border: "1px solid #cbd5e1",
-								padding: "16px",
-								fontSize: "1.125rem",
+								padding: "10px",
+								fontSize: "1rem",
 								fontWeight: 500,
 								color: "#0f172a",
 								backgroundColor: "#ffffff",
@@ -398,10 +410,10 @@ export default function WerkzaamhedenModal({
 							onClick={handleSave}
 							disabled={saving}
 							style={{
-								borderRadius: "16px",
+								borderRadius: "12px",
 								border: "none",
-								padding: "16px",
-								fontSize: "1.125rem",
+								padding: "10px",
+								fontSize: "1rem",
 								fontWeight: 500,
 								color: "#ffffff",
 								backgroundColor: saving ? "#86efac" : "#22c55e",
