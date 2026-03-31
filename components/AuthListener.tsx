@@ -16,7 +16,7 @@ export default function AuthListener() {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
-      }
+      },
     );
 
     return () => {
@@ -26,11 +26,7 @@ export default function AuthListener() {
 
   return (
     <div>
-      {user ? (
-        <p>Welkom, {user.email}!</p>
-      ) : (
-        <p>Je bent niet ingelogd</p>
-      )}
+      {user ? <p>Welkom, {user.email}!</p> : <p>Je bent niet ingelogd</p>}
     </div>
   );
 }

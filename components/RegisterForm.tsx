@@ -22,7 +22,7 @@ export default function RegisterForm() {
       setMessage("Fout bij registreren: " + error.message);
     } else {
       setMessage(
-        `Magic Link gestuurd! Check je e-mail om je account te activeren met ${email}`
+        `Magic Link gestuurd! Check je e-mail om je account te activeren met ${email}`,
       );
     }
   };
@@ -32,9 +32,7 @@ export default function RegisterForm() {
       <h2 className="text-2xl font-bold text-blue-800 mb-6 text-center">
         Welkom bij AutoGarage Pro
       </h2>
-      <p className="text-gray-600 text-center mb-6">
-        Registreer uw account
-      </p>
+      <p className="text-gray-600 text-center mb-6">Registreer uw account</p>
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div className="flex flex-col">
@@ -60,9 +58,7 @@ export default function RegisterForm() {
       </form>
 
       {message && (
-        <p className="mt-4 text-center text-sm text-gray-600">
-          {message}
-        </p>
+        <p className="mt-4 text-center text-sm text-gray-600">{message}</p>
       )}
 
       <p className="mt-4 text-center text-gray-600">

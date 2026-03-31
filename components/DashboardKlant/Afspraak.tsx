@@ -35,8 +35,13 @@ export default function Afspraak() {
 
   const onChange =
     (key: keyof FormState) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const value = key === "datum" ? formatDatum(e.target.value) : e.target.value;
+    (
+      e: ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
+    ) => {
+      const value =
+        key === "datum" ? formatDatum(e.target.value) : e.target.value;
       setForm((prev) => ({ ...prev, [key]: value }));
     };
 
@@ -118,7 +123,9 @@ export default function Afspraak() {
       <form onSubmit={onSubmit} className="space-y-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Gewenste datum *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Gewenste datum *
+            </label>
             <input
               type="text"
               inputMode="numeric"
@@ -133,7 +140,9 @@ export default function Afspraak() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Type dienst *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Type dienst *
+            </label>
             <select
               value={form.dienst}
               onChange={onChange("dienst")}
@@ -142,9 +151,7 @@ export default function Afspraak() {
                 form.dienst ? "text-slate-900" : "text-slate-500"
               }`}
             >
-              <option value="">
-                Selecteer een dienst
-              </option>
+              <option value="">Selecteer een dienst</option>
               <option value="onderhoud" className="text-slate-900">
                 Onderhoud
               </option>
@@ -163,7 +170,9 @@ export default function Afspraak() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Kenteken *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Kenteken *
+            </label>
             <input
               value={form.kenteken}
               onChange={onChange("kenteken")}
@@ -174,7 +183,9 @@ export default function Afspraak() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Merk *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Merk *
+            </label>
             <input
               value={form.merk}
               onChange={onChange("merk")}
@@ -185,7 +196,9 @@ export default function Afspraak() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Model *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Model *
+            </label>
             <input
               value={form.model}
               onChange={onChange("model")}
@@ -197,7 +210,9 @@ export default function Afspraak() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Opmerkingen / Specifieke klachten</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Opmerkingen / Specifieke klachten
+          </label>
           <textarea
             value={form.opmerkingen}
             onChange={onChange("opmerkingen")}
@@ -208,8 +223,9 @@ export default function Afspraak() {
         </div>
 
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-          <strong>Let op:</strong> Na het indienen van uw afspraak, zal onze receptie deze bevestigen en een monteur
-          toewijzen. U ontvangt updates over de status.
+          <strong>Let op:</strong> Na het indienen van uw afspraak, zal onze
+          receptie deze bevestigen en een monteur toewijzen. U ontvangt updates
+          over de status.
         </div>
 
         {error && (
