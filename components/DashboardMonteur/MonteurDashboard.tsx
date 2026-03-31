@@ -373,12 +373,6 @@ export default function MonteurDashboard() {
           </div>
 
           <div className="flex items-center gap-6 text-xl">
-            <Link
-              href="/dashboard"
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-700 hover:bg-slate-100"
-            >
-              Terug naar Dashboard
-            </Link>
             <div className="flex items-center gap-2 rounded-xl bg-purple-50 px-4 py-2 text-purple-700">
               <CircleUserRound size={20} />
               <span className="font-medium">{profileName}</span>
@@ -400,6 +394,12 @@ export default function MonteurDashboard() {
       </header>
 
       <main className="mx-auto max-w-312.5 px-8 py-10">
+        <Link
+          href="/dashboard"
+          className="mb-6 inline-block text-xl text-blue-600 hover:underline"
+        >
+          ← Terug naar dashboard
+        </Link>
         <h1 className="text-5xl font-bold">Monteur Dashboard</h1>
         <p className="mt-3 text-2xl text-slate-600">
           Uw toegewezen afspraken en werkzaamheden
