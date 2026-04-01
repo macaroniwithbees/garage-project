@@ -6,6 +6,18 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 
+// ---- CHARTS ----
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts";
+
 // ---- TYPES ----
 type Repair = {
   created_at: string;
@@ -137,27 +149,45 @@ export default function AdminPage() {
           Inzicht in omzet, uren en prestaties
         </p>
 
-        {/* cards */}
+        {/* kaarten */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* profit */}
+          {/* OMZET */}
           <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
             <h2 className="text-gray-800 font-semibold text-lg mb-4">
               Omzet Laatste 6 Maanden
             </h2>
 
             <pre className="text-xs bg-gray-100 p-3 rounded-lg">
-              {JSON.stringify(monthlyStats, null, 2)}
+              <div className="w-full h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyStats}>
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
             </pre>
           </div>
 
-          {/* hours */}
+          {/* UREN */}
           <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
             <h2 className="text-gray-800 font-semibold text-lg mb-4">
               Gewerkte Uren Laatste 6 Maanden
             </h2>
 
             <pre className="text-xs bg-gray-100 p-3 rounded-lg">
-              {JSON.stringify(hoursData, null, 2)}
+              <div className="w-full h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={hoursData}>
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#10b981" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             </pre>
           </div>
         </div>
