@@ -41,7 +41,7 @@ export default function AppointmentCard({
           )}
         </div>
 
-        <div className="min-w-[260px] text-xl text-slate-600">
+        <div className="min-w-65 text-xl text-slate-600">
           {appointment.telefoon && (
             <p>
               <span className="font-semibold text-slate-700">Telefoon:</span>{" "}
