@@ -59,18 +59,6 @@ export default function Afspraak() {
       return;
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", user.email ?? "")
-      .single();
-
-    if (profileError || !profile) {
-      setError("Kon gebruikersprofiel niet vinden.");
-      setLoading(false);
-      return;
-    }
-
     const dateParts = form.datum.split("/");
     const formattedDate =
       dateParts.length === 3
@@ -80,10 +68,8 @@ export default function Afspraak() {
     const { data: appointment, error: insertError } = await supabase
       .from("appointments")
       .insert({
-        user_id: profile.id,
-        datum: formattedDate,
-        voertuig: `${form.merk} ${form.model} - ${form.kenteken}`,
-        opmerkingen: form.opmerkingen.trim() || null,
+        user_id: user.id,
+        date: formattedDate,
       })
       .select("id")
       .single();
@@ -104,6 +90,8 @@ export default function Afspraak() {
     const { error: repairError } = await supabase.from("repairs").insert({
       appointment_id: appointment.id,
       beschrijving: repairBeschrijving,
+      uren: 0,
+      kosten: 0,
     });
 
     setLoading(false);
@@ -113,7 +101,7 @@ export default function Afspraak() {
       return;
     }
 
-    router.push("/dashboard/MijnAfspraken");
+    router.push("/dashboard/afspraken");
   };
 
   return (

@@ -4,22 +4,35 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import Navbar from "@/components/Navbar";
-import { CalendarDays, FileText } from "lucide-react";
+import { CalendarDays, FileText, Wrench, ClipboardList } from "lucide-react";
 import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [rol, setRol] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
+      const u = data.session?.user ?? null;
+      setUser(u);
+      if (u) {
+        supabase
+          .from("users")
+          .select("rol")
+          .eq("id", u.id)
+          .single()
+          .then(({ data: profile }) => {
+            setRol(profile?.rol ?? null);
+          });
+      }
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
-      }
+      },
     );
 
     return () => listener.subscription.unsubscribe();
@@ -35,16 +48,13 @@ export default function Dashboard() {
   }
 
   const name =
-    user.user_metadata?.full_name ||
-    user.email?.split("@")[0] ||
-    "Gebruiker";
+    user.user_metadata?.full_name || user.email?.split("@")[0] || "Gebruiker";
 
   return (
     <div className="min-h-screen bg-blue-50">
       <Navbar user={user} onLogout={handleLogout} />
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        
         {/* header */}
         <h1 className="text-2xl font-bold text-gray-800 mb-2">
           Welkom, {name}!
@@ -55,40 +65,83 @@ export default function Dashboard() {
 
         {/* actie kaarten */}
         <div className="grid md:grid-cols-2 gap-6 mb-10">
-            
-            {/* afspraak maken */}
-            <Link href="/dashboard/afspraak" className="block">
+          {/* afspraak maken */}
+          <Link href="/dashboard/afspraak" className="block">
             <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
-                <div className="bg-blue-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
+              <div className="bg-blue-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
                 <CalendarDays className="text-blue-600" />
-                </div>
-                <h2 className="text-gray-800 font-semibold text-lg mb-2">Afspraak Maken</h2>
-                <p className="text-gray-600 text-sm">
-                Plan een nieuwe afspraak voor onderhoud, reparatie of APK keuring
-                </p>
+              </div>
+              <h2 className="text-gray-800 font-semibold text-lg mb-2">
+                Afspraak Maken
+              </h2>
+              <p className="text-gray-600 text-sm">
+                Plan een nieuwe afspraak voor onderhoud, reparatie of APK
+                keuring
+              </p>
             </div>
-            </Link>
+          </Link>
 
-            {/* mijn afspraken */}
-            <Link href="/dashboard/afspraken" className="block">
+          {/* mijn afspraken */}
+          <Link href="/dashboard/afspraken" className="block">
             <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
-                <div className="bg-green-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
-                    <FileText className="text-green-600" />
-                </div>
-                <h2 className="text-gray-800 font-semibold text-lg mb-2">Mijn Afspraken</h2>
-                <p className="text-gray-600 text-sm">
-                    Bekijk de status van uw afspraken, facturen en laat een review achter
-                </p>
+              <div className="bg-green-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
+                <FileText className="text-green-600" />
+              </div>
+              <h2 className="text-gray-800 font-semibold text-lg mb-2">
+                Mijn Afspraken
+              </h2>
+              <p className="text-gray-600 text-sm">
+                Bekijk de status van uw afspraken, facturen en laat een review
+                achter
+              </p>
             </div>
-            </Link>
+          </Link>
         </div>
+
+        {/* Rol-specifieke kaarten */}
+        {rol === "monteur" && (
+          <div className="mb-10">
+            <Link href="/dashboard/mechanic" className="block">
+              <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
+                <div className="bg-purple-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
+                  <Wrench className="text-purple-600" />
+                </div>
+                <h2 className="text-gray-800 font-semibold text-lg mb-2">
+                  Monteur Dashboard
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Bekijk uw toegewezen afspraken en registreer werkzaamheden
+                </p>
+              </div>
+            </Link>
+          </div>
+        )}
+
+        {rol === "receptionist" && (
+          <div className="mb-10">
+            <Link href="/dashboard/receptionist" className="block">
+              <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition cursor-pointer">
+                <div className="bg-orange-100 w-12 h-12 flex items-center justify-center rounded-xl mb-4">
+                  <ClipboardList className="text-orange-600" />
+                </div>
+                <h2 className="text-gray-800 font-semibold text-lg mb-2">
+                  Receptionist Dashboard
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Beheer afspraken, wijs monteurs toe en bevestig betalingen
+                </p>
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* hoe werkt het */}
         <div className="bg-white p-8 rounded-2xl shadow-md">
-          <h2 className="text-gray-800 font-semibold text-lg mb-6">Hoe werkt het?</h2>
+          <h2 className="text-gray-800 font-semibold text-lg mb-6">
+            Hoe werkt het?
+          </h2>
 
           <div className="grid md:grid-cols-4 gap-6 text-center">
-            
             {[
               {
                 step: 1,

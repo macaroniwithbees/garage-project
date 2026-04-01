@@ -21,24 +21,18 @@ export type ReceptionistAppointment = {
 
 export type AppointmentRow = {
   id: number;
-  user_id: number | null;
-  datum: string | null;
+  user_id: string | null;
+  date: string | null;
   status: string | null;
-  toegewezen_monteur: number | null;
-  voertuig?: string | null;
-  kenteken?: string | null;
-  merk?: string | null;
-  model?: string | null;
-  telefoon?: string | null;
-  opmerkingen?: string | null;
+  toegewezen_monteur: string | null;
+  created_at?: string | null;
 };
 
 export type UserRow = {
-  id: number;
+  id: string;
   naam: string | null;
   email: string | null;
   rol: string | null;
-  telefoon?: string | null;
 };
 
 export type InvoiceRow = {
@@ -52,6 +46,6 @@ export type RepairRow = {
 };
 
 export type MechanicOption = {
-  id: number;
+  id: string;
   naam: string;
 };

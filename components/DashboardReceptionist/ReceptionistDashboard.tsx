@@ -14,7 +14,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import AppointmentCard from "./AppointmentCard";
 import AssignMechanic from "./AssignMechanic";
-import { normalizeStatus, toDateLabel, toVehicleLabel } from "./helpers";
+import { normalizeStatus, toDateLabel } from "./helpers";
 import type {
   AppointmentRow,
   InvoiceRow,
@@ -55,7 +55,7 @@ export default function ReceptionistDashboard() {
           .from("appointments")
           .select("*")
           .order("id", { ascending: false }),
-        supabase.from("users").select("id, naam, email, rol, telefoon"),
+        supabase.from("users").select("id, naam, rol"),
         supabase.from("repairs").select("appointment_id, beschrijving"),
         supabase.from("invoices").select("appointment_id, betaald"),
       ]);
@@ -81,10 +81,11 @@ export default function ReceptionistDashboard() {
       const repairRows = (repairsResponse.data ?? []) as RepairRow[];
       const invoiceRows = (invoicesResponse.data ?? []) as InvoiceRow[];
 
-      const userById = new Map<number, UserRow>(
+      const userById = new Map<string, UserRow>(
         userRows.map((user) => [user.id, user]),
       );
       const serviceByAppointmentId = new Map<number, string>();
+      const voertuigByAppointmentId = new Map<number, string>();
       const notesByAppointmentId = new Map<number, string>();
       const invoiceByAppointmentId = new Map<number, InvoiceRow>();
 
@@ -97,8 +98,12 @@ export default function ReceptionistDashboard() {
             .split("|")
             .map((part) => part.trim());
           const parsedService = repairParts[0] || repair.beschrijving;
+          const parsedVoertuig = repairParts[1] || "";
           const parsedNote = repairParts[3] || "";
           serviceByAppointmentId.set(repair.appointment_id, parsedService);
+          if (parsedVoertuig) {
+            voertuigByAppointmentId.set(repair.appointment_id, parsedVoertuig);
+          }
           if (parsedNote) {
             notesByAppointmentId.set(repair.appointment_id, parsedNote);
           }
@@ -117,14 +122,14 @@ export default function ReceptionistDashboard() {
           })),
       );
 
-      if (currentUser?.email) {
+      if (currentUser) {
         const receptionist = userRows.find(
-          (user) => user.email === currentUser.email,
+          (user) => user.id === currentUser.id,
         );
         setProfileName(
           receptionist?.naam ??
             currentUser.user_metadata?.full_name ??
-            currentUser.email.split("@")[0] ??
+            currentUser.email?.split("@")[0] ??
             "Receptionist",
         );
       }
@@ -140,18 +145,13 @@ export default function ReceptionistDashboard() {
 
         return {
           id: appointment.id,
-          voertuig: toVehicleLabel(appointment),
-          klant:
-            customer?.naam ??
-            customer?.email ??
-            `Klant #${appointment.user_id ?? "-"}`,
+          voertuig:
+            voertuigByAppointmentId.get(appointment.id) ??
+            `Afspraak #${appointment.id}`,
+          klant: customer?.naam ?? `Klant #${appointment.user_id ?? "-"}`,
           dienst: serviceByAppointmentId.get(appointment.id),
-          telefoon: appointment.telefoon ?? customer?.telefoon ?? undefined,
-          datum: toDateLabel(appointment.datum),
-          opmerkingen:
-            appointment.opmerkingen ??
-            notesByAppointmentId.get(appointment.id) ??
-            undefined,
+          datum: toDateLabel(appointment.date),
+          opmerkingen: notesByAppointmentId.get(appointment.id) ?? undefined,
           monteur: mechanic?.naam ?? undefined,
           klantBetaald: invoice ? invoice.betaald === "ja" : false,
           betaald: false,
@@ -194,7 +194,7 @@ export default function ReceptionistDashboard() {
   const updateStatusWithFallback = async (
     appointmentId: number,
     statusCandidates: string[],
-    mechanicId?: number,
+    mechanicId?: string,
   ) => {
     let lastError: string | null = null;
 
@@ -294,7 +294,7 @@ export default function ReceptionistDashboard() {
   const handleAssignMechanic = () => {
     if (!selectedAppointment || !selectedMechanic) return;
 
-    const mechanicId = Number(selectedMechanic);
+    const mechanicId = selectedMechanic;
     const mechanic = mechanics.find((item) => item.id === mechanicId);
     if (!mechanic) return;
 

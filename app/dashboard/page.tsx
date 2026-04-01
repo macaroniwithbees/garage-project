@@ -10,39 +10,41 @@ export default function DashboardRedirect() {
     let cancelled = false;
 
     async function redirect() {
-        const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        if (cancelled) return;
+      if (cancelled) return;
 
-        if (!session) {
-            router.replace("/login");
-            return;
-        }
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
 
-        const { data: profile } = await supabase
-            .from("users")
-            .select("rol")
-            .eq("id", session.user.id)
-            .single();
+      const { data: profile } = await supabase
+        .from("users")
+        .select("rol")
+        .eq("id", session.user.id)
+        .single();
 
-        if (cancelled) return;
+      if (cancelled) return;
 
-        if (!profile) {
-            router.replace("/login");
-            return;
-        }
+      if (!profile) {
+        router.replace("/login");
+        return;
+      }
 
-        if (profile.rol === "klant") router.replace("/dashboard/klant");
-        else if (profile.rol === "mechanic") router.replace("/dashboard/mechanic");
-        else if (profile.rol === "admin") router.replace("/dashboard/admin");
-        else if (profile.rol === "receptionist") router.replace("/dashboard/receptionist");
-        else router.replace("/login");
+      if (profile.rol === "admin" || profile.rol === "eigenaar")
+        router.replace("/dashboard/admin");
+      else router.replace("/dashboard/klant");
     }
 
     redirect();
 
-    return () => { cancelled = true; };
-    }, []); 
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   return <p className="text-center mt-10">Even laden...</p>;
 }

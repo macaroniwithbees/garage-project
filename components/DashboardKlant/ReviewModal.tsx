@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 type ReviewModalProps = {
   open: boolean;
-  userId: number | null;
+  userId: string | null;
   onClose: () => void;
   onSubmitted: () => void;
 };

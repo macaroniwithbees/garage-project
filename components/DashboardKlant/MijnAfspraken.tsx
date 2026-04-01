@@ -246,7 +246,7 @@ export default function MijnAfspraken() {
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [hasReview, setHasReview] = useState(false);
 
   useEffect(() => {
@@ -260,23 +260,12 @@ export default function MijnAfspraken() {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("users")
-        .select("id")
-        .eq("email", user.email ?? "")
-        .single();
-
-      if (!profile) {
-        setLoading(false);
-        return;
-      }
-
-      setUserId(profile.id);
+      setUserId(user.id);
 
       const { data, error } = await supabase
         .from("appointments")
         .select("*")
-        .eq("user_id", profile.id)
+        .eq("user_id", user.id)
         .order("id", { ascending: false });
 
       if (error) {
@@ -288,20 +277,15 @@ export default function MijnAfspraken() {
       if (data) {
         const appointments = data as Array<{
           id: number;
-          voertuig: string | null;
-          merk: string | null;
-          model: string | null;
-          kenteken: string | null;
-          datum: string | null;
-          opmerkingen: string | null;
+          date: string | null;
           status: string | null;
-          toegewezen_monteur: number | null;
+          toegewezen_monteur: string | null;
         }>;
 
         const appointmentIds = appointments.map((item) => item.id);
         const mechanicIds = appointments
           .map((item) => item.toegewezen_monteur)
-          .filter((item): item is number => item !== null);
+          .filter((item): item is string => item !== null);
 
         const [repairsResult, mechanicsResult, invoicesResult, reviewsResult] =
           await Promise.all([
@@ -323,7 +307,7 @@ export default function MijnAfspraken() {
             supabase
               .from("reviews")
               .select("id")
-              .eq("user_id", profile.id)
+              .eq("user_id", user.id)
               .limit(1),
           ]);
 
@@ -332,7 +316,7 @@ export default function MijnAfspraken() {
           beschrijving: string | null;
         }>;
         const mechanics = (mechanicsResult.data ?? []) as Array<{
-          id: number;
+          id: string;
           naam: string | null;
         }>;
         const invoices = (invoicesResult.data ?? []) as Invoice[];
@@ -348,7 +332,7 @@ export default function MijnAfspraken() {
           }
         }
 
-        const mechanicById = new Map<number, string>();
+        const mechanicById = new Map<string, string>();
         for (const mechanic of mechanics) {
           mechanicById.set(
             mechanic.id,
@@ -364,20 +348,23 @@ export default function MijnAfspraken() {
         const mapped = appointments.map((item) => {
           const repairText = repairByAppointment.get(item.id) ?? "";
           const repairParts = repairText.split("|").map((part) => part.trim());
-          const voertuigDelen = (item.voertuig ?? "").split("-");
-          const merkModel = voertuigDelen[0]?.trim() ?? "";
-          const kenteken = voertuigDelen[1]?.trim() ?? "";
+
+          // Parse vehicle info from repairs.beschrijving: "dienst | merk model | kenteken | opmerkingen"
+          const merkModelPart = repairParts[1] ?? "";
+          const merkModelSplit = merkModelPart.split(" ");
+          const merk = merkModelSplit[0] || "Onbekend";
+          const model = merkModelSplit.slice(1).join(" ") || "";
 
           return {
             id: item.id,
-            merk: item.merk ?? (merkModel || "Onbekend"),
-            model: item.model ?? "",
-            kenteken: item.kenteken ?? (kenteken || repairParts[2] || "-"),
-            dienst: repairParts[0] || repairByAppointment.get(item.id) || "-",
-            datum: item.datum
-              ? new Date(item.datum).toLocaleDateString("nl-NL")
+            merk,
+            model,
+            kenteken: repairParts[2] || "-",
+            dienst: repairParts[0] || "-",
+            datum: item.date
+              ? new Date(item.date).toLocaleDateString("nl-NL")
               : "-",
-            opmerkingen: item.opmerkingen?.trim() || repairParts[3] || "",
+            opmerkingen: repairParts[3] || "",
             status: normalizeStatus(item.status),
             monteur: item.toegewezen_monteur
               ? mechanicById.get(item.toegewezen_monteur)

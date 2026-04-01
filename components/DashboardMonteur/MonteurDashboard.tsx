@@ -29,16 +29,6 @@ const toDateLabel = (dateValue: string | null): string | undefined => {
   return new Date(dateValue).toLocaleDateString("nl-NL");
 };
 
-const toVehicleLabel = (row: {
-  voertuig?: string | null;
-  merk?: string | null;
-  id: number;
-}): string => {
-  if (row.voertuig) return row.voertuig;
-  if (row.merk) return row.merk;
-  return `Voertuig #${row.id}`;
-};
-
 const normalizeStatus = (
   status: string | null,
 ): MonteurAppointment["status"] => {
@@ -154,26 +144,27 @@ export default function MonteurDashboard() {
       const authUser = authData.user;
       setCurrentUser(authUser);
 
-      let monteurId: number | null = null;
+      let monteurId: string | null = null;
       let monteurNaam = "Monteur";
 
-      if (authUser?.email) {
+      if (authUser) {
         const { data: userRow, error: userError } = await supabase
           .from("users")
           .select("id, naam, rol")
-          .eq("email", authUser.email)
+          .eq("id", authUser.id)
           .single();
 
         if (!userError && userRow) {
           const row = userRow as {
-            id: number;
+            id: string;
             naam: string | null;
             rol: string | null;
           };
           if (row.rol?.toLowerCase() === "monteur") {
             setIsMonteur(true);
             monteurId = row.id;
-            monteurNaam = row.naam ?? authUser.email.split("@")[0];
+            monteurNaam =
+              row.naam ?? authUser.email?.split("@")[0] ?? "Monteur";
           }
         }
       }
@@ -188,11 +179,9 @@ export default function MonteurDashboard() {
 
       const { data: appointmentRows, error: apptError } = await supabase
         .from("appointments")
-        .select(
-          "id, datum, status, opmerkingen, voertuig, merk, user_id, toegewezen_monteur, telefoonnummer",
-        )
+        .select("id, date, status, user_id, toegewezen_monteur")
         .eq("toegewezen_monteur", monteurId)
-        .order("datum", { ascending: true });
+        .order("date", { ascending: true });
 
       if (apptError) {
         setErrorText(`Afspraken laden mislukt: ${apptError.message}`);
@@ -203,29 +192,30 @@ export default function MonteurDashboard() {
       const userIds = [
         ...new Set(
           (appointmentRows ?? [])
-            .map((a: { user_id: number | null }) => a.user_id)
-            .filter((id): id is number => id !== null),
+            .map((a: { user_id: string | null }) => a.user_id)
+            .filter((id): id is string => id !== null),
         ),
       ];
 
-      const klantById = new Map<number, string>();
+      const klantById = new Map<string, string>();
       if (userIds.length > 0) {
         const { data: klantRows } = await supabase
           .from("users")
-          .select("id, naam, email")
+          .select("id, naam")
           .in("id", userIds);
         for (const k of klantRows ?? []) {
           const row = k as {
-            id: number;
+            id: string;
             naam: string | null;
-            email: string | null;
           };
-          klantById.set(row.id, row.naam ?? row.email ?? `Klant #${row.id}`);
+          klantById.set(row.id, row.naam ?? `Klant`);
         }
       }
 
       const apptIds = (appointmentRows ?? []).map((a: { id: number }) => a.id);
       const dienstById = new Map<number, string>();
+      const voertuigById = new Map<number, string>();
+      const opmerkingenById = new Map<number, string>();
       if (apptIds.length > 0) {
         const { data: repairRows } = await supabase
           .from("repairs")
@@ -242,6 +232,8 @@ export default function MonteurDashboard() {
               .split("|")
               .map((part) => part.trim());
             dienstById.set(row.appointment_id, parts[0] || row.beschrijving);
+            if (parts[1]) voertuigById.set(row.appointment_id, parts[1]);
+            if (parts[3]) opmerkingenById.set(row.appointment_id, parts[3]);
           }
         }
       }
@@ -250,23 +242,20 @@ export default function MonteurDashboard() {
         (row) => {
           const r = row as {
             id: number;
-            datum: string | null;
+            date: string | null;
             status: string | null;
-            opmerkingen: string | null;
-            voertuig: string | null;
-            merk: string | null;
-            user_id: number | null;
+            user_id: string | null;
           };
 
           return {
             id: r.id,
-            voertuig: toVehicleLabel(r),
+            voertuig: voertuigById.get(r.id) ?? `Voertuig #${r.id}`,
             klant: r.user_id
-              ? (klantById.get(r.user_id) ?? `Klant #${r.user_id}`)
+              ? (klantById.get(r.user_id) ?? "Onbekend")
               : "Onbekend",
             dienst: dienstById.get(r.id),
-            datum: toDateLabel(r.datum),
-            opmerkingen: r.opmerkingen ?? undefined,
+            datum: toDateLabel(r.date),
+            opmerkingen: opmerkingenById.get(r.id),
             status: normalizeStatus(r.status),
           };
         },
@@ -395,7 +384,7 @@ export default function MonteurDashboard() {
 
       <main className="mx-auto max-w-312.5 px-8 py-10">
         <Link
-          href="/dashboard"
+          href="/dashboard/klant"
           className="mb-6 inline-block text-xl text-blue-600 hover:underline"
         >
           ← Terug naar dashboard
