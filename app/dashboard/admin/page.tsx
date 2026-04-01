@@ -21,13 +21,11 @@ import {
 
 // ---- TYPES ----
 type Repair = {
-  created_at: string;
-  price: number | null;
-};
-
-type WorkHour = {
-  created_at: string;
-  hours: number | null;
+  kosten: number | null;
+  uren: number | null;
+  appointments: {
+    date: string;
+  }[] | null;
 };
 
 type ChartData = {
@@ -36,74 +34,112 @@ type ChartData = {
 };
 
 // ---- HELPERS ----
-const groupByMonth = <T extends { created_at: string }>(
+const groupByMonth = <T,>(
   rows: T[] | null,
   getValue: (row: T) => number,
-  monthsToShow: number
+  getDate: (row: T) => string | null | undefined,
+  startDate?: Date,
+  endDate?: Date
 ): ChartData[] => {
   const map: Record<string, number> = {};
 
   rows?.forEach((row) => {
-    const date = new Date(row.created_at);
-    const key = date.toLocaleString("nl-NL", { month: "short", year: "numeric" });
+    const rawDate = getDate(row);
+    if (!rawDate) return;
+    const date = new Date(rawDate);
 
+    if (startDate && date < startDate) return;
+    if (endDate) {
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      if (date > endOfDay) return;
+    }
+
+    const key = date.toLocaleString("nl-NL", { month: "short", year: "numeric" });
     if (!map[key]) map[key] = 0;
     map[key] += getValue(row);
   });
 
   return Object.entries(map)
-    .slice(-monthsToShow)
-    .map(([month, value]) => ({ month, value }));
+    .map(([month, value]) => ({ month, value }))
+    .sort(
+      (a, b) =>
+        new Date(Date.parse("1 " + a.month)).getTime() -
+        new Date(Date.parse("1 " + b.month)).getTime()
+    );
 };
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [monthlyStats, setMonthlyStats] = useState<ChartData[]>([]);
   const [hoursData, setHoursData] = useState<ChartData[]>([]);
-  const [monthsToShow, setMonthsToShow] = useState(6);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const getUserAndData = async () => {
-      setLoading(true);
+  const fetchData = async () => {
+    setLoading(true);
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        console.error(userError);
-        setLoading(false);
-        return;
-      }
-
-      setUser(user);
-
-      const [{ data: stats, error: statsError }, { data: hours, error: hoursError }] =
-        await Promise.all([
-          supabase.from("repairs").select("created_at, price").order("created_at", { ascending: true }),
-          supabase.from("work_hours").select("created_at, hours").order("created_at", { ascending: true }),
-        ]);
-
-      if (statsError || hoursError) {
-        console.error(statsError || hoursError);
-        setLoading(false);
-        return;
-      }
-
-      const omzet = groupByMonth<Repair>(stats, (row) => Number(row.price) || 0, monthsToShow);
-      const uren = groupByMonth<WorkHour>(hours, (row) => Number(row.hours) || 0, monthsToShow);
-
-      setMonthlyStats(omzet);
-      setHoursData(uren);
-
+    if (userError || !user) {
+      console.error(userError);
       setLoading(false);
-    };
+      return;
+    }
 
-    getUserAndData();
-  }, [monthsToShow]); 
+    setUser(user);
+
+    const { data: repairs, error: repairsError } = await supabase
+      .from("repairs")
+      .select("kosten, uren, appointments(date)");
+    
+    console.log("repairs data:", repairs); // toegevoegd voor debugging
+    console.log("repairs error:", repairsError);
+
+    if (repairsError) {
+      console.error(repairsError);
+      setLoading(false);
+      return;
+    }
+
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+    const getDate = (row: Repair) => {
+      const appt = row.appointments as any;
+      if (Array.isArray(appt)) return appt[0]?.date ?? null;
+      return appt?.date ?? null;
+    };    
+
+    setMonthlyStats(
+      groupByMonth<Repair>(
+        repairs as unknown as Repair[],
+        (row) => Number(row.kosten) || 0,
+        getDate,
+        start,
+        end
+      )
+    );
+    setHoursData(
+      groupByMonth<Repair>(
+        repairs as unknown as Repair[],
+        (row) => Number(row.uren) || 0,
+        getDate,
+        start,
+        end
+      )
+    );
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [startDate, endDate]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -113,31 +149,31 @@ export default function AdminPage() {
   if (loading) return <p className="text-center mt-10">Loading dashboard...</p>;
   if (!user) return <p className="text-center mt-10">Je bent nog niet ingelogd</p>;
 
-  const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "Gebruiker";
-
   return (
     <div className="min-h-screen bg-blue-50">
       <Navbar user={user} onLogout={handleLogout} />
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        {/* header met filter */}
-        <div className="flex items-center justify-between mb-8">
+        {/* header + date range picker */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Eigenaar Dashboard</h1>
             <p className="text-gray-600">Inzicht in omzet, uren en prestaties</p>
           </div>
 
-          {/* filter */}
-          <div>
-            <select
-              value={monthsToShow}
-              onChange={(e) => setMonthsToShow(Number(e.target.value))}
-              className="border rounded-lg px-3 py-2 text-sm"
-            >
-              <option value={3}>Laatste 3 maanden</option>
-              <option value={6}>Laatste 6 maanden</option>
-              <option value={12}>Laatste 12 maanden</option>
-            </select>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-black text-sm bg-white shadow-sm"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-black text-sm bg-white shadow-sm"
+            />
           </div>
         </div>
 
@@ -145,17 +181,15 @@ export default function AdminPage() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* profit */}
           <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
-            <h2 className="text-gray-800 font-semibold text-lg mb-2">
-              Omzet Laatste {monthsToShow} Maanden
-            </h2>
-            <div className="w-full h-60">
+            <h2 className="text-gray-800 font-semibold text-lg mb-2">Omzet</h2>
+            <div style={{ width: "100%", height: "240px" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyStats}>
                   <Legend />
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip formatter={(value) => `€${value}`} />
-                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
+                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} name="Omzet" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -163,10 +197,8 @@ export default function AdminPage() {
 
           {/* hours */}
           <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
-            <h2 className="text-gray-800 font-semibold text-lg mb-2">
-              Gewerkte Uren Laatste {monthsToShow} Maanden
-            </h2>
-            <div className="w-full h-60">
+            <h2 className="text-gray-800 font-semibold text-lg mb-2">Gewerkte Uren</h2>
+            <div style={{ width: "100%", height: "240px" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hoursData}>
                   <Legend />
