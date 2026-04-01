@@ -330,7 +330,7 @@ export default function ReceptionistDashboard() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <header className="border-b border-slate-200 bg-white px-8 py-4">
-        <div className="mx-auto flex w-full max-w-[1250px] items-center justify-between">
+        <div className="mx-auto flex w-full max-w-312.5 items-center justify-between">
           <div className="flex items-center gap-3">
             <Car className="text-blue-600" />
             <span className="text-[38px] font-bold">AutoGarage Pro</span>
@@ -353,7 +353,7 @@ export default function ReceptionistDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1250px] px-8 py-10">
+      <main className="mx-auto max-w-312.5 px-8 py-10">
         <Link
           href="/dashboard"
           className="mb-6 inline-block text-blue-600 hover:underline text-xl"
