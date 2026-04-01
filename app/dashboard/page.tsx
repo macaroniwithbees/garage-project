@@ -34,6 +34,8 @@ export default function DashboardRedirect() {
 
         if (profile.rol === "klant") router.replace("/dashboard/klant");
         else if (profile.rol === "mechanic") router.replace("/dashboard/mechanic");
+        else if (profile.rol === "admin") router.replace("/dashboard/admin");
+        else if (profile.rol === "receptionist") router.replace("/dashboard/receptionist");
         else router.replace("/login");
     }
 
