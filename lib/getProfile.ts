@@ -1,22 +1,16 @@
-import { createClient } from './supabase/server'
+import { createClient } from "@/lib/supabase/server";
 
 export async function getUserProfile() {
-  const supabase = await createClient()
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
-
-  if (!user) return null
+  if (!session) return null;
 
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+    .from("users")
+    .select("rol")
+    .eq("id", session.user.id)
+    .single();
 
-  return {
-    user,
-    role: profile?.role ?? null
-  }
+  return { user: session.user, role: profile?.rol ?? null };
 }
