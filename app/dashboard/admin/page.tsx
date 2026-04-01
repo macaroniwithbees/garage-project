@@ -10,6 +10,7 @@ import Navbar from "@/components/Navbar";
 import {
   LineChart,
   Line,
+  Legend,
   XAxis,
   YAxis,
   Tooltip,
@@ -37,24 +38,21 @@ type ChartData = {
 // ---- HELPERS ----
 const groupByMonth = <T extends { created_at: string }>(
   rows: T[] | null,
-  getValue: (row: T) => number
+  getValue: (row: T) => number,
+  monthsToShow: number
 ): ChartData[] => {
   const map: Record<string, number> = {};
 
   rows?.forEach((row) => {
     const date = new Date(row.created_at);
-
-    const key = date.toLocaleString("nl-NL", {
-      month: "short",
-      year: "numeric",
-    });
+    const key = date.toLocaleString("nl-NL", { month: "short", year: "numeric" });
 
     if (!map[key]) map[key] = 0;
     map[key] += getValue(row);
   });
 
   return Object.entries(map)
-    .slice(-6)
+    .slice(-monthsToShow)
     .map(([month, value]) => ({ month, value }));
 };
 
@@ -62,6 +60,7 @@ export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [monthlyStats, setMonthlyStats] = useState<ChartData[]>([]);
   const [hoursData, setHoursData] = useState<ChartData[]>([]);
+  const [monthsToShow, setMonthsToShow] = useState(6);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -74,13 +73,8 @@ export default function AdminPage() {
         error: userError,
       } = await supabase.auth.getUser();
 
-      if (userError) {
+      if (userError || !user) {
         console.error(userError);
-        setLoading(false);
-        return;
-      }
-
-      if (!user) {
         setLoading(false);
         return;
       }
@@ -89,15 +83,8 @@ export default function AdminPage() {
 
       const [{ data: stats, error: statsError }, { data: hours, error: hoursError }] =
         await Promise.all([
-          supabase
-            .from("repairs")
-            .select("created_at, price")
-            .order("created_at", { ascending: true }),
-
-          supabase
-            .from("work_hours")
-            .select("created_at, hours")
-            .order("created_at", { ascending: true }),
+          supabase.from("repairs").select("created_at, price").order("created_at", { ascending: true }),
+          supabase.from("work_hours").select("created_at, hours").order("created_at", { ascending: true }),
         ]);
 
       if (statsError || hoursError) {
@@ -106,8 +93,8 @@ export default function AdminPage() {
         return;
       }
 
-      const omzet = groupByMonth<Repair>(stats, (row) => Number(row.price) || 0);
-      const uren = groupByMonth<WorkHour>(hours, (row) => Number(row.hours) || 0);
+      const omzet = groupByMonth<Repair>(stats, (row) => Number(row.price) || 0, monthsToShow);
+      const uren = groupByMonth<WorkHour>(hours, (row) => Number(row.hours) || 0, monthsToShow);
 
       setMonthlyStats(omzet);
       setHoursData(uren);
@@ -116,79 +103,80 @@ export default function AdminPage() {
     };
 
     getUserAndData();
-  }, []);
+  }, [monthsToShow]); 
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (!error) router.push("/");
   };
 
-  if (loading) {
-    return <p className="text-center mt-10">Loading dashboard...</p>;
-  }
+  if (loading) return <p className="text-center mt-10">Loading dashboard...</p>;
+  if (!user) return <p className="text-center mt-10">Je bent nog niet ingelogd</p>;
 
-  if (!user) {
-    return <p className="text-center mt-10">Je bent nog niet ingelogd</p>;
-  }
-
-  const name =
-    user.user_metadata?.full_name ||
-    user.email?.split("@")[0] ||
-    "Gebruiker";
+  const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "Gebruiker";
 
   return (
     <div className="min-h-screen bg-blue-50">
       <Navbar user={user} onLogout={handleLogout} />
 
       <div className="max-w-6xl mx-auto px-6 py-10">
-        {/* header */}
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-          Eigenaar Dashboard
-        </h1>
-        <p className="text-gray-600 mb-8">
-          Inzicht in omzet, uren en prestaties
-        </p>
+        {/* header met filter */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Eigenaar Dashboard</h1>
+            <p className="text-gray-600">Inzicht in omzet, uren en prestaties</p>
+          </div>
 
-        {/* kaarten */}
+          {/* filter */}
+          <div>
+            <select
+              value={monthsToShow}
+              onChange={(e) => setMonthsToShow(Number(e.target.value))}
+              className="border rounded-lg px-3 py-2 text-sm"
+            >
+              <option value={3}>Laatste 3 maanden</option>
+              <option value={6}>Laatste 6 maanden</option>
+              <option value={12}>Laatste 12 maanden</option>
+            </select>
+          </div>
+        </div>
+
+        {/* chart cards */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* OMZET */}
-          <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
-            <h2 className="text-gray-800 font-semibold text-lg mb-4">
-              Omzet Laatste 6 Maanden
+          {/* profit */}
+          <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+            <h2 className="text-gray-800 font-semibold text-lg mb-2">
+              Omzet Laatste {monthsToShow} Maanden
             </h2>
-
-            <pre className="text-xs bg-gray-100 p-3 rounded-lg">
-              <div className="w-full h-[250px]">
+            <div className="w-full h-60">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyStats}>
+                  <Legend />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip formatter={(value) => `€${value}`} />
                   <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            </pre>
           </div>
 
-          {/* UREN */}
-          <div className="bg-white p-6 rounded-2xl shadow-md hover:shadow-lg transition">
-            <h2 className="text-gray-800 font-semibold text-lg mb-4">
-              Gewerkte Uren Laatste 6 Maanden
+          {/* hours */}
+          <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+            <h2 className="text-gray-800 font-semibold text-lg mb-2">
+              Gewerkte Uren Laatste {monthsToShow} Maanden
             </h2>
-
-            <pre className="text-xs bg-gray-100 p-3 rounded-lg">
-              <div className="w-full h-[250px]">
+            <div className="w-full h-60">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hoursData}>
+                  <Legend />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#10b981" />
+                  <Tooltip formatter={(value) => `${value} uur`} />
+                  <Bar dataKey="value" fill="#10b981" name="Uren" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            </pre>
           </div>
         </div>
       </div>
