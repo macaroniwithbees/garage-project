@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AuthListener() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Check initial session
-    const session = supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
     });
 
@@ -15,7 +16,7 @@ export default function AuthListener() {
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
-      }
+      },
     );
 
     return () => {
@@ -25,11 +26,7 @@ export default function AuthListener() {
 
   return (
     <div>
-      {user ? (
-        <p>Welkom, {user.email}!</p>
-      ) : (
-        <p>Je bent niet ingelogd</p>
-      )}
+      {user ? <p>Welkom, {user.email}!</p> : <p>Je bent niet ingelogd</p>}
     </div>
   );
 }
