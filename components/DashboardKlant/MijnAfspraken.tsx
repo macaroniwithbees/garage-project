@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import ReviewModal from "./ReviewModal";
 
 type Status =
   | "in_afwachting"
   | "bevestigd"
   | "in_behandeling"
-  | "klaar_voor_ophalen";
+  | "klaar_voor_ophalen"
+  | "afgerond";
 
 type Invoice = {
   appointment_id: number;
@@ -48,6 +50,11 @@ const statusConfig: Record<
     bg: "bg-green-100",
     text: "text-green-800",
   },
+  afgerond: {
+    label: "Afgerond",
+    bg: "bg-slate-100",
+    text: "text-slate-800",
+  },
 };
 
 function normalizeStatus(status: string | null): Status {
@@ -60,6 +67,7 @@ function normalizeStatus(status: string | null): Status {
     return "in_behandeling";
   if (status === "klaar_voor_ophalen" || status === "ready_for_pickup")
     return "klaar_voor_ophalen";
+  if (status === "afgerond" || status === "completed") return "afgerond";
   return "in_afwachting";
 }
 
@@ -77,9 +85,13 @@ function StatusBadge({ status }: { status: Status }) {
 function AfspraakCard({
   afspraak,
   onBetaal,
+  onReview,
+  heeftReview,
 }: {
   afspraak: Afspraak;
   onBetaal: (id: number) => void;
+  onReview: () => void;
+  heeftReview: boolean;
 }) {
   const heeftFactuur =
     afspraak.invoice && afspraak.invoice.totaalbedrag != null;
@@ -153,6 +165,17 @@ function AfspraakCard({
           </div>
         </div>
       )}
+
+      {/* Review knop */}
+      {isBetaald && !heeftReview && (
+        <button
+          type="button"
+          onClick={() => onReview()}
+          className="mt-4 w-full rounded-xl bg-yellow-500 py-3 text-sm font-semibold text-white transition hover:bg-yellow-600"
+        >
+          ⭐ Laat een review achter
+        </button>
+      )}
     </div>
   );
 }
@@ -222,6 +245,9 @@ export default function MijnAfspraken() {
     bedrag: number;
   } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [hasReview, setHasReview] = useState(false);
 
   useEffect(() => {
     async function fetchAfspraken() {
@@ -244,6 +270,8 @@ export default function MijnAfspraken() {
         setLoading(false);
         return;
       }
+
+      setUserId(profile.id);
 
       const { data, error } = await supabase
         .from("appointments")
@@ -275,7 +303,7 @@ export default function MijnAfspraken() {
           .map((item) => item.toegewezen_monteur)
           .filter((item): item is number => item !== null);
 
-        const [repairsResult, mechanicsResult, invoicesResult] =
+        const [repairsResult, mechanicsResult, invoicesResult, reviewsResult] =
           await Promise.all([
             appointmentIds.length > 0
               ? supabase
@@ -292,6 +320,11 @@ export default function MijnAfspraken() {
                   .select("appointment_id, totaalbedrag, betaald")
                   .in("appointment_id", appointmentIds)
               : Promise.resolve({ data: [], error: null }),
+            supabase
+              .from("reviews")
+              .select("id")
+              .eq("user_id", profile.id)
+              .limit(1),
           ]);
 
         const repairs = (repairsResult.data ?? []) as Array<{
@@ -303,6 +336,7 @@ export default function MijnAfspraken() {
           naam: string | null;
         }>;
         const invoices = (invoicesResult.data ?? []) as Invoice[];
+        setHasReview((reviewsResult.data ?? []).length > 0);
 
         const repairByAppointment = new Map<number, string>();
         for (const repair of repairs) {
@@ -381,11 +415,18 @@ export default function MijnAfspraken() {
       return;
     }
 
+    // Status naar afgerond na betaling
+    await supabase
+      .from("appointments")
+      .update({ status: "afgerond" })
+      .eq("id", betaalModal.appointmentId);
+
     setAfspraken((prev) =>
       prev.map((a) =>
         a.id === betaalModal.appointmentId
           ? {
               ...a,
+              status: "afgerond" as Status,
               invoice: a.invoice ? { ...a.invoice, betaald: "ja" } : a.invoice,
             }
           : a,
@@ -412,7 +453,13 @@ export default function MijnAfspraken() {
           <p className="text-slate-500">U heeft nog geen afspraken.</p>
         ) : (
           afspraken.map((a) => (
-            <AfspraakCard key={a.id} afspraak={a} onBetaal={openBetaalModal} />
+            <AfspraakCard
+              key={a.id}
+              afspraak={a}
+              onBetaal={openBetaalModal}
+              onReview={() => setReviewModalOpen(true)}
+              heeftReview={hasReview}
+            />
           ))
         )}
       </div>
@@ -423,6 +470,16 @@ export default function MijnAfspraken() {
         onClose={() => setBetaalModal(null)}
         onBetaal={handleBetaal}
         saving={saving}
+      />
+
+      <ReviewModal
+        open={reviewModalOpen}
+        userId={userId}
+        onClose={() => setReviewModalOpen(false)}
+        onSubmitted={() => {
+          setHasReview(true);
+          setReviewModalOpen(false);
+        }}
       />
     </div>
   );
