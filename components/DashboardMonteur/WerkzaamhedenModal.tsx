@@ -174,11 +174,7 @@ export default function WerkzaamhedenModal({
 
       // Update appointment status.
       // Some DBs only allow "klaar" (enum). Receptionist dashboard will normalize "klaar" to "klaar_voor_ophalen".
-      const statusCandidates = [
-        "klaar_voor_ophalen",
-        "ready_for_pickup",
-        "klaar",
-      ];
+      const statusCandidates = ["klaar_voor_ophalen"];
       let lastStatusError: string | null = null;
 
       for (const statusValue of statusCandidates) {

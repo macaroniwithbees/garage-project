@@ -32,25 +32,12 @@ const toDateLabel = (dateValue: string | null): string | undefined => {
 const normalizeStatus = (
   status: string | null,
 ): MonteurAppointment["status"] => {
-  if (
-    status === "in behandeling" ||
-    status === "in_behandeling" ||
-    status === "in_progress"
-  )
+  if (status === "in behandeling" || status === "in_behandeling")
     return "bezig";
-  if (
-    status === "klaar_voor_ophalen" ||
-    status === "ready_for_pickup" ||
-    status === "completed" ||
-    status === "ready" ||
-    status === "klaar" ||
-    status === "afgerond"
-  )
-    return "klaar";
+  if (status === "klaar_voor_ophalen" || status === "afgerond") return "klaar";
   if (
     status === "ingepland" ||
     status === "bevestigd" ||
-    status === "confirmed" ||
     status === "in_afwachting"
   )
     return "toegewezen";

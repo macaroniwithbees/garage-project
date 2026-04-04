@@ -214,10 +214,7 @@ export default function ReceptionistDashboard() {
   };
 
   const handleConfirm = async (id: number) => {
-    const errorMessage = await updateStatusWithFallback(id, [
-      "confirmed",
-      "ingepland",
-    ]);
+    const errorMessage = await updateStatusWithFallback(id, ["ingepland"]);
     if (errorMessage) {
       setErrorText(`Bevestigen mislukt: ${errorMessage}`);
       return;
@@ -252,7 +249,7 @@ export default function ReceptionistDashboard() {
     }
 
     // Klant heeft betaald, receptionist bevestigt nu — zet status naar afgerond
-    const statusCandidates = ["afgerond", "completed"];
+    const statusCandidates = ["afgerond"];
     let lastError: string | null = null;
     for (const statusValue of statusCandidates) {
       const { error } = await supabase
@@ -301,7 +298,7 @@ export default function ReceptionistDashboard() {
     void (async () => {
       const errorMessage = await updateStatusWithFallback(
         selectedAppointment.id,
-        ["in behandeling", "in_behandeling", "in_progress"],
+        ["in_behandeling"],
         mechanicId,
       );
 

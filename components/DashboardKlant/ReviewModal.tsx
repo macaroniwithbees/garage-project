@@ -10,6 +10,7 @@ type ReviewModalProps = {
   onSubmitted: () => void;
 };
 
+// Interactieve sterren-selector (1 tot 5) met hover-effect
 function StarRating({
   rating,
   onChange,
@@ -17,6 +18,7 @@ function StarRating({
   rating: number;
   onChange: (r: number) => void;
 }) {
+  // Houdt bij over welke ster de muis zweeft
   const [hover, setHover] = useState(0);
 
   return (
@@ -44,12 +46,14 @@ function StarRating({
   );
 }
 
+// Pop-up waarin de klant een review kan achterlaten
 export default function ReviewModal({
   open,
   userId,
   onClose,
   onSubmitted,
 }: ReviewModalProps) {
+  // Gekozen aantal sterren (0 = nog niets geselecteerd)
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
@@ -57,6 +61,7 @@ export default function ReviewModal({
 
   if (!open || userId === null) return null;
 
+  // Sla de review op in de database
   const handleSubmit = async () => {
     if (rating === 0) {
       setErrorText("Selecteer een beoordeling.");
@@ -84,6 +89,7 @@ export default function ReviewModal({
     onSubmitted();
   };
 
+  // Sluit de modal en reset alle velden
   const handleClose = () => {
     setRating(0);
     setComment("");

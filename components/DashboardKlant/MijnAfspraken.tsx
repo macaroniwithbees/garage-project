@@ -4,19 +4,20 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import ReviewModal from "./ReviewModal";
 
+// statussen van een afspraak
 type Status =
   | "in_afwachting"
   | "bevestigd"
   | "in_behandeling"
   | "klaar_voor_ophalen"
   | "afgerond";
-
+// Type definitie voor een factuur, gekoppeld aan een afspraak
 type Invoice = {
   appointment_id: number;
   totaalbedrag: number | null;
   betaald: string | null;
 };
-
+// Type definitie voor een afspraak, inclusief alle details die we willen tonen
 type Afspraak = {
   id: number;
   merk: string;
@@ -30,6 +31,7 @@ type Afspraak = {
   invoice?: Invoice;
 };
 
+// Kleuren en labels per status voor de badge
 const statusConfig: Record<
   Status,
   { label: string; bg: string; text: string }
@@ -57,20 +59,16 @@ const statusConfig: Record<
   },
 };
 
+// Vertaalt database-status naar een vast Status type
 function normalizeStatus(status: string | null): Status {
-  if (status === "bevestigd" || status === "confirmed") return "bevestigd";
-  if (
-    status === "in behandeling" ||
-    status === "in_behandeling" ||
-    status === "in_progress"
-  )
-    return "in_behandeling";
-  if (status === "klaar_voor_ophalen" || status === "ready_for_pickup")
-    return "klaar_voor_ophalen";
-  if (status === "afgerond" || status === "completed") return "afgerond";
+  if (status === "bevestigd") return "bevestigd";
+  if (status === "in_behandeling") return "in_behandeling";
+  if (status === "klaar_voor_ophalen") return "klaar_voor_ophalen";
+  if (status === "afgerond") return "afgerond";
   return "in_afwachting";
 }
 
+// Toont een gekleurd label met de status van de afspraak
 function StatusBadge({ status }: { status: Status }) {
   const { label, bg, text } = statusConfig[status];
   return (
@@ -82,6 +80,7 @@ function StatusBadge({ status }: { status: Status }) {
   );
 }
 
+// Kaart die alle details van één afspraak toont (auto, status, factuur, review)
 function AfspraakCard({
   afspraak,
   onBetaal,
@@ -180,6 +179,7 @@ function AfspraakCard({
   );
 }
 
+// Pop-up venster om een betaling te simuleren
 function BetaalModal({
   open,
   bedrag,
@@ -237,21 +237,29 @@ function BetaalModal({
 }
 
 export default function MijnAfspraken() {
+  // Lijst van alle afspraken van de gebruiker
   const [afspraken, setAfspraken] = useState<Afspraak[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorText, setErrorText] = useState<string | null>(null);
+
+  // State voor de betaal-popup (welke afspraak + bedrag)
   const [betaalModal, setBetaalModal] = useState<{
     appointmentId: number;
     bedrag: number;
   } | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // State voor de review-popup
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [hasReview, setHasReview] = useState(false);
 
+  // Haal alle afspraken op bij het laden van de pagina
   useEffect(() => {
     async function fetchAfspraken() {
       setErrorText(null);
+
+      // Haal de ingelogde gebruiker op
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -261,7 +269,7 @@ export default function MijnAfspraken() {
       }
 
       setUserId(user.id);
-
+      // Haal alle afspraken van deze gebruiker op, gesorteerd op nieuwste eerst
       const { data, error } = await supabase
         .from("appointments")
         .select("*")
@@ -273,7 +281,7 @@ export default function MijnAfspraken() {
         setLoading(false);
         return;
       }
-
+      // Als er afspraken zijn, haal dan ook de bijbehorende reparaties, monteurs, facturen en reviews op
       if (data) {
         const appointments = data as Array<{
           id: number;
@@ -281,12 +289,13 @@ export default function MijnAfspraken() {
           status: string | null;
           toegewezen_monteur: string | null;
         }>;
-
+        // Haal alle unieke appointment IDs en toegewezen monteur IDs op uit de afspraken
         const appointmentIds = appointments.map((item) => item.id);
         const mechanicIds = appointments
           .map((item) => item.toegewezen_monteur)
           .filter((item): item is string => item !== null);
 
+        // Haal de reparaties, monteurs, facturen en reviews op
         const [repairsResult, mechanicsResult, invoicesResult, reviewsResult] =
           await Promise.all([
             appointmentIds.length > 0
@@ -310,7 +319,7 @@ export default function MijnAfspraken() {
               .eq("user_id", user.id)
               .limit(1),
           ]);
-
+        // Zet de opgehaalde data om in makkelijk te gebruiken maps en combineer alles tot één lijst van Afspraak-objecten
         const repairs = (repairsResult.data ?? []) as Array<{
           appointment_id: number;
           beschrijving: string | null;
@@ -322,6 +331,7 @@ export default function MijnAfspraken() {
         const invoices = (invoicesResult.data ?? []) as Invoice[];
         setHasReview((reviewsResult.data ?? []).length > 0);
 
+        // Koppel reparatie-beschrijvingen aan hun afspraak-ID
         const repairByAppointment = new Map<number, string>();
         for (const repair of repairs) {
           if (
@@ -332,6 +342,7 @@ export default function MijnAfspraken() {
           }
         }
 
+        // Koppel monteur-namen aan hun gebruikers-ID
         const mechanicById = new Map<string, string>();
         for (const mechanic of mechanics) {
           mechanicById.set(
@@ -340,21 +351,23 @@ export default function MijnAfspraken() {
           );
         }
 
+        // Koppel facturen aan hun afspraak-ID
         const invoiceByAppointment = new Map<number, Invoice>();
         for (const invoice of invoices) {
           invoiceByAppointment.set(invoice.appointment_id, invoice);
         }
 
+        // Combineer alle data tot één Afspraak-object per appointment
         const mapped = appointments.map((item) => {
           const repairText = repairByAppointment.get(item.id) ?? "";
           const repairParts = repairText.split("|").map((part) => part.trim());
 
-          // Parse vehicle info from repairs.beschrijving: "dienst | merk model | kenteken | opmerkingen"
+          // Merk en model zitten samen in één veld, dus we moeten ze splitsen
           const merkModelPart = repairParts[1] ?? "";
           const merkModelSplit = merkModelPart.split(" ");
           const merk = merkModelSplit[0] || "Onbekend";
           const model = merkModelSplit.slice(1).join(" ") || "";
-
+          // Maak het uiteindelijke Afspraak-object dat we in de UI gaan gebruiken
           return {
             id: item.id,
             merk,
@@ -381,12 +394,14 @@ export default function MijnAfspraken() {
     fetchAfspraken();
   }, []);
 
+  // Opent de betaal-popup met het juiste bedrag
   const openBetaalModal = (appointmentId: number) => {
     const afspraak = afspraken.find((a) => a.id === appointmentId);
     if (!afspraak?.invoice?.totaalbedrag) return;
     setBetaalModal({ appointmentId, bedrag: afspraak.invoice.totaalbedrag });
   };
 
+  // Verwerkt de betaling: factuur op betaald zetten + status naar afgerond
   const handleBetaal = async () => {
     if (!betaalModal) return;
     setSaving(true);
