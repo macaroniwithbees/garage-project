@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import WerkzaamhedenModal from "./WerkzaamhedenModal";
 
+// Type voor een afspraak zoals de monteur die ziet
 type MonteurAppointment = {
   id: number;
   voertuig: string;
@@ -24,11 +25,13 @@ type MonteurAppointment = {
   status: "toegewezen" | "bezig" | "klaar";
 };
 
+// Zet een datum string om naar Nederlands formaat (dd-mm-jjjj)
 const toDateLabel = (dateValue: string | null): string | undefined => {
   if (!dateValue) return undefined;
   return new Date(dateValue).toLocaleDateString("nl-NL");
 };
 
+// Vertaalt de database status naar een van de drie mogelijke statussen
 const normalizeStatus = (
   status: string | null,
 ): MonteurAppointment["status"] => {
@@ -44,12 +47,14 @@ const normalizeStatus = (
   return "toegewezen";
 };
 
+// Labels die bij elke status horen
 const STATUS_LABEL: Record<MonteurAppointment["status"], string> = {
   toegewezen: "Toegewezen",
   bezig: "Bezig",
   klaar: "Klaar",
 };
 
+// Kleuren die bij elke status horen
 const STATUS_COLORS: Record<MonteurAppointment["status"], string> = {
   toegewezen: "bg-blue-100 text-blue-700",
   bezig: "bg-purple-100 text-purple-700",
@@ -61,6 +66,7 @@ type AppointmentCardProps = {
   action?: React.ReactNode;
 };
 
+// Kaart component dat één afspraak toont met optionele actieknop
 function MonteurAppointmentCard({ appointment, action }: AppointmentCardProps) {
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -113,6 +119,8 @@ function MonteurAppointmentCard({ appointment, action }: AppointmentCardProps) {
 
 export default function MonteurDashboard() {
   const router = useRouter();
+
+  // State voor afspraken, gebruikersinfo, laden en fouten
   const [appointments, setAppointments] = useState<MonteurAppointment[]>([]);
   const [profileName, setProfileName] = useState("Monteur");
   const [loading, setLoading] = useState(true);
@@ -122,11 +130,13 @@ export default function MonteurDashboard() {
   const [isMonteur, setIsMonteur] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+  // Laad alle afspraakdata bij het openen van de pagina
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       setErrorText("");
 
+      // Haal de ingelogde gebruiker op
       const { data: authData } = await supabase.auth.getUser();
       const authUser = authData.user;
       setCurrentUser(authUser);
@@ -134,19 +144,21 @@ export default function MonteurDashboard() {
       let monteurId: string | null = null;
       let monteurNaam = "Monteur";
 
+      // Controleer of de gebruiker een monteur is
       if (authUser) {
         const { data: userRow, error: userError } = await supabase
           .from("users")
           .select("id, naam, rol")
           .eq("id", authUser.id)
           .single();
-
+        // Als er geen fout is en er een gebruiker is, controleer dan de rol
         if (!userError && userRow) {
           const row = userRow as {
             id: string;
             naam: string | null;
             rol: string | null;
-          };
+          }; //als de gebruiker een monteur is, sla dan de ID en naam op voor later gebruik
+          // Wat betekent dat we alleen afspraken gaan laden als de gebruiker een monteur is.
           if (row.rol?.toLowerCase() === "monteur") {
             setIsMonteur(true);
             monteurId = row.id;
@@ -157,13 +169,14 @@ export default function MonteurDashboard() {
       }
 
       setProfileName(monteurNaam);
-
+      // Als er geen ingelogde gebruiker is of de gebruiker is geen monteur, stop dan met laden en laat een lege lijst zien
       if (!authUser || !monteurId) {
         setAppointments([]);
         setLoading(false);
         return;
       }
 
+      // Haal alle afspraken op die aan deze monteur zijn toegewezen
       const { data: appointmentRows, error: apptError } = await supabase
         .from("appointments")
         .select("id, date, status, user_id, toegewezen_monteur")
@@ -176,6 +189,7 @@ export default function MonteurDashboard() {
         return;
       }
 
+      // Verzamel unieke klant-IDs uit de afspraken
       const userIds = [
         ...new Set(
           (appointmentRows ?? [])
@@ -184,6 +198,7 @@ export default function MonteurDashboard() {
         ),
       ];
 
+      // Haal klantnamen op uit de users tabel
       const klantById = new Map<string, string>();
       if (userIds.length > 0) {
         const { data: klantRows } = await supabase
@@ -199,21 +214,24 @@ export default function MonteurDashboard() {
         }
       }
 
+      // Haal reparatie-info op (dienst, voertuig, opmerkingen) uit de repairs tabel
       const apptIds = (appointmentRows ?? []).map((a: { id: number }) => a.id);
       const dienstById = new Map<number, string>();
       const voertuigById = new Map<number, string>();
       const opmerkingenById = new Map<number, string>();
+      // als er afspraken zijn, haal ze dan op en verwerk ze.
       if (apptIds.length > 0) {
         const { data: repairRows } = await supabase
           .from("repairs")
           .select("appointment_id, beschrijving")
           .in("appointment_id", apptIds);
-
+        // voor elke reparatierij, splits de beschrijving en sla de dienst, voertuig en opmerkingen op in maps die gekoppeld zijn aan de afspraak-ID's.
         for (const r of repairRows ?? []) {
           const row = r as {
             appointment_id: number;
             beschrijving: string | null;
           };
+          // We controleren of we deze afspraak-ID al hebben verwerkt om dubbele verwerking te voorkomen.
           if (!dienstById.has(row.appointment_id) && row.beschrijving) {
             const parts = row.beschrijving
               .split("|")
@@ -225,6 +243,7 @@ export default function MonteurDashboard() {
         }
       }
 
+      // Zet de database rijen om naar MonteurAppointment objecten
       const mapped: MonteurAppointment[] = (appointmentRows ?? []).map(
         (row) => {
           const r = row as {
@@ -233,7 +252,7 @@ export default function MonteurDashboard() {
             status: string | null;
             user_id: string | null;
           };
-
+          //daarna returnen we een nieuw object met alle benodigde info voor de monteur, waarbij we de maps gebruiken om de dienst, voertuig en opmerkingen te koppelen aan de juiste afspraak-ID's.
           return {
             id: r.id,
             voertuig: voertuigById.get(r.id) ?? `Voertuig #${r.id}`,
@@ -255,6 +274,7 @@ export default function MonteurDashboard() {
     void loadData();
   }, []);
 
+  // Filter afspraken per status voor de drie secties
   const assignedAppointments = useMemo(
     () =>
       appointments.filter((appointment) => appointment.status === "toegewezen"),
@@ -269,21 +289,17 @@ export default function MonteurDashboard() {
     [appointments],
   );
 
+  // Zet de status van een afspraak op "bezig" in de database
   const handleStartWerkzaamheden = async (id: number) => {
     if (!isMonteur) {
       setErrorText("Alleen monteurs kunnen werkzaamheden starten.");
       return;
     }
 
-    // Different deployments/DBs might store the in-progress status differently.
-    // Try the common variants before failing.
-    const statusCandidates = [
-      "in behandeling",
-      "in_behandeling",
-      "in_progress",
-    ];
+    const statusCandidates = ["in behandeling"];
     let lastError: string | null = null;
 
+    // Probeer de status bij te werken in de database
     for (const statusValue of statusCandidates) {
       const { error } = await supabase
         .from("appointments")
@@ -301,6 +317,7 @@ export default function MonteurDashboard() {
       return;
     }
 
+    // Werk de lokale state bij zodat de UI direct wordt geüpdatet
     setAppointments((prev) =>
       prev.map((appointment) =>
         appointment.id === id
@@ -310,19 +327,21 @@ export default function MonteurDashboard() {
     );
   };
 
+  // Opent de modal om werkzaamheden te registreren
   const openModal = (appointment: MonteurAppointment) => {
     if (!isMonteur) {
       setErrorText("Alleen monteurs kunnen werkzaamheden registreren.");
       return;
     }
-
+    // We slaan de hele afspraak op in de state zodat we alle benodigde info hebben in de modal.
     setSelectedAppointment(appointment);
   };
-
+  // Sluit de modal en reset de geselecteerde afspraak
   const closeModal = () => {
     setSelectedAppointment(null);
   };
 
+  // Na voltooien: zet lokale status op "klaar" en sluit de modal
   const handleCompleted = (appointmentId: number) => {
     setAppointments((prev) =>
       prev.map((appointment) =>
@@ -334,6 +353,7 @@ export default function MonteurDashboard() {
     closeModal();
   };
 
+  // Logt de gebruiker uit en stuurt terug naar de homepagina
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");

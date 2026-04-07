@@ -5,8 +5,10 @@ import { X, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { createPortal } from "react-dom";
 
+// Uurtarief voor arbeidskosten berekening
 const UURTARIEF = 75;
 
+// Lijst van standaard handelingen die de monteur kan selecteren
 const STANDAARD_HANDELINGEN = [
   "Olie vervangen",
   "Remblokken vervangen",
@@ -20,17 +22,20 @@ const STANDAARD_HANDELINGEN = [
   "Filters vervangen",
 ];
 
+// Type voor een materiaal uit de database
 type Material = {
   id: number;
   naam: string;
   prijs: number;
 };
 
+// Type voor een geselecteerd materiaal met hoeveelheid
 type SelectedMaterial = {
   material: Material;
   hoeveelheid: number;
 };
 
+// Props voor de WerkzaamhedenModal component
 type WerkzaamhedenModalProps = {
   open: boolean;
   appointmentId: number | null;
@@ -48,6 +53,7 @@ export default function WerkzaamhedenModal({
   onClose,
   onCompleted,
 }: WerkzaamhedenModalProps) {
+  // State voor formulier: geselecteerde handelingen, materialen, uren en opmerkingen
   const [materials, setMaterials] = useState<Material[]>([]);
   const [selectedHandelingen, setSelectedHandelingen] = useState<string[]>([]);
   const [selectedMaterials, setSelectedMaterials] = useState<
@@ -58,6 +64,7 @@ export default function WerkzaamhedenModal({
   const [saving, setSaving] = useState(false);
   const [errorText, setErrorText] = useState("");
 
+  // Reset formulier en laad materialen wanneer de modal opent
   useEffect(() => {
     if (!open) return;
     setSelectedHandelingen([]);
@@ -74,9 +81,11 @@ export default function WerkzaamhedenModal({
       });
   }, [open]);
 
+  // Toon modal niet als deze gesloten is of geen afspraak geselecteerd
   if (!open || appointmentId === null) return null;
   if (typeof document === "undefined") return null;
 
+  // Voeg een handeling toe of verwijder deze uit de selectie
   const toggleHandeling = (handeling: string) => {
     setSelectedHandelingen((prev) =>
       prev.includes(handeling)
@@ -85,6 +94,7 @@ export default function WerkzaamhedenModal({
     );
   };
 
+  // Voeg een materiaal toe of verwijder het uit de selectie
   const toggleMaterial = (material: Material) => {
     setSelectedMaterials((prev) => {
       const exists = prev.find((m) => m.material.id === material.id);
@@ -93,6 +103,7 @@ export default function WerkzaamhedenModal({
     });
   };
 
+  // Pas de hoeveelheid van een geselecteerd materiaal aan
   const updateHoeveelheid = (materialId: number, hoeveelheid: number) => {
     setSelectedMaterials((prev) =>
       prev.map((m) =>
@@ -103,6 +114,7 @@ export default function WerkzaamhedenModal({
     );
   };
 
+  // Bereken kosten: arbeidskosten + materiaalkosten = totaal
   const arbeidskosten = uren * UURTARIEF;
   const materiaalkosten = selectedMaterials.reduce(
     (sum, m) => sum + m.material.prijs * m.hoeveelheid,
@@ -110,6 +122,7 @@ export default function WerkzaamhedenModal({
   );
   const totaal = arbeidskosten + materiaalkosten;
 
+  // Sla werkzaamheden op: reparatie, materialen, factuur en update de afspraakstatus
   const handleSave = async () => {
     if (!isMonteur) {
       setErrorText("Alleen monteurs kunnen werkzaamheden registreren.");
@@ -119,6 +132,7 @@ export default function WerkzaamhedenModal({
     setErrorText("");
 
     try {
+      // Maak beschrijving van geselecteerde handelingen en opmerkingen
       const beschrijving =
         [
           ...selectedHandelingen,
@@ -129,7 +143,7 @@ export default function WerkzaamhedenModal({
         opmerkingen ||
         "Werkzaamheden uitgevoerd";
 
-      // Insert repair
+      // Sla de reparatie op in de database
       const { data: repairData, error: repairError } = await supabase
         .from("repairs")
         .insert({
@@ -146,7 +160,7 @@ export default function WerkzaamhedenModal({
 
       const repairId = (repairData as { id: number }).id;
 
-      // Insert repair_materials
+      // Sla gebruikte materialen op bij de reparatie
       if (selectedMaterials.length > 0) {
         const materialRows = selectedMaterials.map((m) => ({
           repair_id: repairId,
@@ -160,7 +174,7 @@ export default function WerkzaamhedenModal({
           throw new Error(`Materialen opslaan mislukt: ${matError.message}`);
       }
 
-      // Upsert invoice
+      // Maak of update de factuur voor deze afspraak
       const { error: invoiceError } = await supabase.from("invoices").upsert(
         {
           appointment_id: appointmentId,
@@ -172,8 +186,7 @@ export default function WerkzaamhedenModal({
       if (invoiceError)
         throw new Error(`Factuur opslaan mislukt: ${invoiceError.message}`);
 
-      // Update appointment status.
-      // Some DBs only allow "klaar" (enum). Receptionist dashboard will normalize "klaar" to "klaar_voor_ophalen".
+      // Zet afspraakstatus op "klaar_voor_ophalen"
       const statusCandidates = ["klaar_voor_ophalen"];
       let lastStatusError: string | null = null;
 
@@ -188,10 +201,10 @@ export default function WerkzaamhedenModal({
         }
         lastStatusError = statusError.message;
       }
-
+      // Als alle statusupdates mislukken, toon dan de laatste foutmelding
       if (lastStatusError)
         throw new Error(`Status bijwerken mislukt: ${lastStatusError}`);
-
+      // Werkzaamheden succesvol opgeslagen, sluit modal en refresh dashboard
       onCompleted(appointmentId);
     } catch (err) {
       setErrorText(
@@ -210,7 +223,6 @@ export default function WerkzaamhedenModal({
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 9999,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -233,7 +245,6 @@ export default function WerkzaamhedenModal({
             position: "absolute",
             right: 16,
             top: 16,
-            zIndex: 10,
             color: "#334155",
           }}
           className="hover:text-slate-900"

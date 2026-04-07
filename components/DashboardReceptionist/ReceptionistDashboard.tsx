@@ -26,6 +26,8 @@ import type {
 
 export default function ReceptionistDashboard() {
   const router = useRouter();
+
+  // State: lijst van alle afspraken, beschikbare monteurs, profielnaam, laadstatus, foutmeldingen en selectie voor monteur-toewijzing
   const [appointments, setAppointments] = useState<ReceptionistAppointment[]>(
     [],
   );
@@ -37,14 +39,17 @@ export default function ReceptionistDashboard() {
     useState<ReceptionistAppointment | null>(null);
   const [selectedMechanic, setSelectedMechanic] = useState("");
 
+  // Laad alle dashboarddata bij het openen van de pagina
   useEffect(() => {
     const loadDashboardData = async () => {
       setLoading(true);
       setErrorText("");
 
+      // Haal de ingelogde gebruiker op
       const { data: authData } = await supabase.auth.getUser();
       const currentUser = authData.user;
 
+      // Haal afspraken, gebruikers, reparaties en facturen parallel op uit de database
       const [
         appointmentsResponse,
         usersResponse,
@@ -81,6 +86,7 @@ export default function ReceptionistDashboard() {
       const repairRows = (repairsResponse.data ?? []) as RepairRow[];
       const invoiceRows = (invoicesResponse.data ?? []) as InvoiceRow[];
 
+      // Maak lookup-maps om snel gegevens per ID op te zoeken
       const userById = new Map<string, UserRow>(
         userRows.map((user) => [user.id, user]),
       );
@@ -89,6 +95,7 @@ export default function ReceptionistDashboard() {
       const notesByAppointmentId = new Map<number, string>();
       const invoiceByAppointmentId = new Map<number, InvoiceRow>();
 
+      // Splits de reparatie-beschrijving in dienst, voertuig en opmerkingen per afspraak
       for (const repair of repairRows) {
         if (
           !serviceByAppointmentId.has(repair.appointment_id) &&
@@ -113,6 +120,7 @@ export default function ReceptionistDashboard() {
         invoiceByAppointmentId.set(invoice.appointment_id, invoice);
       }
 
+      // Filter gebruikers met rol "monteur" voor de monteur-toewijzing dropdown
       setMechanics(
         userRows
           .filter((user) => (user.rol ?? "").toLowerCase() === "monteur")
@@ -122,6 +130,7 @@ export default function ReceptionistDashboard() {
           })),
       );
 
+      // Stel de profielnaam van de ingelogde receptionist in
       if (currentUser) {
         const receptionist = userRows.find(
           (user) => user.id === currentUser.id,
@@ -134,6 +143,7 @@ export default function ReceptionistDashboard() {
         );
       }
 
+      // Zet database-rijen om naar ReceptionistAppointment objecten met alle gekoppelde gegevens
       const mappedAppointments = appointmentRows.map((appointment) => {
         const customer = appointment.user_id
           ? userById.get(appointment.user_id)
@@ -166,6 +176,7 @@ export default function ReceptionistDashboard() {
     void loadDashboardData();
   }, []);
 
+  // Afgeleide lijsten: filter afspraken per status voor de verschillende secties op het dashboard
   const isAssignOpen = useMemo(
     () => selectedAppointment !== null,
     [selectedAppointment],
@@ -191,6 +202,7 @@ export default function ReceptionistDashboard() {
     [appointments],
   );
 
+  // Probeert de status van een afspraak bij te werken, met optioneel een monteur toewijzen
   const updateStatusWithFallback = async (
     appointmentId: number,
     statusCandidates: string[],
@@ -213,6 +225,7 @@ export default function ReceptionistDashboard() {
     return lastError;
   };
 
+  // Bevestigt een afspraak: zet status van "in_afwachting" naar "ingepland"
   const handleConfirm = async (id: number) => {
     const errorMessage = await updateStatusWithFallback(id, ["ingepland"]);
     if (errorMessage) {
@@ -228,6 +241,7 @@ export default function ReceptionistDashboard() {
     );
   };
 
+  // Markeert een afspraak als betaald en rondt deze af, mits de klant al betaald heeft
   const handleMarkBetaald = async (id: number) => {
     // Controleer eerst of de klant al betaald heeft in de database
     const { data: invoice, error: fetchError } = await supabase
@@ -278,16 +292,19 @@ export default function ReceptionistDashboard() {
     setErrorText("");
   };
 
+  // Opent de monteur-toewijzing modal voor een specifieke afspraak
   const openAssign = (appointment: ReceptionistAppointment) => {
     setSelectedAppointment(appointment);
     setSelectedMechanic("");
   };
 
+  // Sluit de monteur-toewijzing modal en reset de selectie
   const closeAssign = () => {
     setSelectedAppointment(null);
     setSelectedMechanic("");
   };
 
+  // Wijst de geselecteerde monteur toe aan de afspraak en zet de status op "in behandeling"
   const handleAssignMechanic = () => {
     if (!selectedAppointment || !selectedMechanic) return;
 
@@ -319,6 +336,7 @@ export default function ReceptionistDashboard() {
     })();
   };
 
+  // Logt de gebruiker uit en stuurt terug naar de homepagina
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");

@@ -71,11 +71,11 @@ export default function Afspraak() {
       return;
     }
 
-    // Zet DD/MM/YYYY voor de database
+    // Zet DD/MM/YYYY om naar YYYY-MM-DD voor de database
     const dateParts = form.datum.split("/");
     const formattedDate =
       dateParts.length === 3
-        ? `${dateParts[0]}-${dateParts[1]}-${dateParts[2]}`
+        ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
         : form.datum;
 
     // Sla de afspraak op in de "appointments" tabel
