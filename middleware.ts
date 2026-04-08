@@ -1,56 +1,44 @@
-import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { NextRequest } from "next/server";
-import { AppRoute, Role, routeRoles } from "@/lib/roles";
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { AppRoute, Role, routeRoles } from '@/lib/roles'
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+export async function middleware(req: Request) {
+  const url = new URL(req.url)
+  const path = url.pathname
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase environment variables");
-  }
+  if (path.startsWith('/auth')) return NextResponse.next()
 
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      get: (key) => req.cookies.get(key)?.value,
-    },
-  });
+  const supabase = await createClient() 
 
   const {
     data: { session },
-  } = await supabase.auth.getSession();
+  } = await supabase.auth.getSession()
 
-  const path = req.nextUrl.pathname;
-
-  if (path.startsWith("/auth")) return res;
-
-  if (!session && path.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  if (!session && path.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', url.origin))
   }
 
   const matchedRoute = (Object.keys(routeRoles) as AppRoute[]).find((route) =>
     path.startsWith(route)
-  );
+  )
 
   if (matchedRoute) {
     const { data: profile } = await supabase
-      .from("users")
-      .select("rol")
-      .eq("id", session?.user.id)
-      .single();
+      .from('users')
+      .select('rol')
+      .eq('id', session?.user.id)
+      .single()
 
-    const allowedRoles = routeRoles[matchedRoute];
+    const allowedRoles = routeRoles[matchedRoute]
 
     if (!profile?.rol || !allowedRoles.includes(profile.rol as Role)) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      return NextResponse.redirect(new URL('/dashboard', url.origin))
     }
   }
 
-  return res;
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
-};
+  matcher: ['/dashboard/:path*'],
+}

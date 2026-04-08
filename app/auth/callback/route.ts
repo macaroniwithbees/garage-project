@@ -1,15 +1,11 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
-export async function GET(request: Request) {
-  const supabase = await createClient();
+export async function GET(req: Request) {
+  const url = new URL(req.url)
+  const supabase = await createClient() // ✅ Reuse helper
 
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
+  await supabase.auth.exchangeCodeForSession(url.toString())
 
-  if (code) {
-    await supabase.auth.exchangeCodeForSession(code);
-  }
-
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  return NextResponse.redirect(new URL('/dashboard', url.origin))
 }
