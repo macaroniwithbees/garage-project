@@ -1,11 +1,17 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url)
-  const supabase = await createClient() // ✅ Reuse helper
+  const url = new URL(req.url);
 
-  await supabase.auth.exchangeCodeForSession(url.toString())
+  const supabase = await createClient();
 
-  return NextResponse.redirect(new URL('/dashboard', url.origin))
+  const { error } = await supabase.auth.exchangeCodeForSession(url.toString());
+
+  if (error) {
+    console.error("Error exchanging code for session:", error.message);
+    return NextResponse.redirect(new URL("/login", url.origin));
+  }
+
+  return NextResponse.redirect(new URL("/dashboard", url.origin));
 }
