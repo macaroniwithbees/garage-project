@@ -24,6 +24,8 @@ export async function middleware(req: NextRequest) {
 
   const path = req.nextUrl.pathname;
 
+  if (path.startsWith("/auth")) return res;
+
   if (!session && path.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
@@ -48,3 +50,7 @@ export async function middleware(req: NextRequest) {
 
   return res;
 }
+
+export const config = {
+  matcher: ["/dashboard/:path*"],
+};
