@@ -210,7 +210,7 @@ export default function ReceptionistDashboard() {
     mechanicId?: string,
   ) => {
     let lastError: string | null = null;
-
+    // Probeer elke status in de lijst totdat er een update zonder foutmelding lukt
     for (const statusValue of statusCandidates) {
       const payload = mechanicId
         ? { status: statusValue, toegewezen_monteur: mechanicId }
@@ -255,7 +255,7 @@ export default function ReceptionistDashboard() {
       setErrorText("Kon factuurstatus niet ophalen. Probeer het opnieuw.");
       return;
     }
-
+    // Als de klant nog niet betaald heeft, toon een foutmelding en stop het proces
     if (invoice.betaald !== "ja") {
       setErrorText(
         "De klant heeft nog niet betaald. U kunt dit pas markeren als de klant de factuur heeft voldaan.",
