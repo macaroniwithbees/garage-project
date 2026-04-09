@@ -80,6 +80,7 @@ export default function ReceptionistDashboard() {
         return;
       }
 
+      // Zet de opgehaalde data om naar getypte arrays (met lege array als fallback)
       const appointmentRows = (appointmentsResponse.data ??
         []) as AppointmentRow[];
       const userRows = (usersResponse.data ?? []) as UserRow[];
