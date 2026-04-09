@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import MijnAfspraken from "@/components/DashboardKlant/MijnAfspraken";
-import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabaseClient";
+import AppLayoutNarrow from "@/components/AppLayoutNarrow";
 
 export default function MijnAfsprakenPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -35,7 +35,7 @@ export default function MijnAfsprakenPage() {
 
   return (
     <div className="min-h-screen bg-blue-50">
-      <Navbar user={user} onLogout={handleLogout} />
+      <AppLayoutNarrow user={user} onLogout={handleLogout} >
 
       <main className="p-6">
         <div className="mx-auto max-w-4xl">
@@ -45,6 +45,7 @@ export default function MijnAfsprakenPage() {
           <MijnAfspraken />
         </div>
       </main>
+    </AppLayoutNarrow>  
     </div>
   );
 }

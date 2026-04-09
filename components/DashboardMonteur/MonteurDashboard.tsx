@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import WerkzaamhedenModal from "./WerkzaamhedenModal";
+import AppLayout from "../AppLayout";
 
 // Type voor een afspraak zoals de monteur die ziet
 type MonteurAppointment = {
@@ -360,83 +361,39 @@ export default function MonteurDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <header className="border-b border-slate-200 bg-white px-8 py-4">
-        <div className="mx-auto flex w-full max-w-312.5 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Car className="text-blue-600" />
-            <span className="text-[38px] font-bold">AutoGarage Pro</span>
-          </div>
-
-          <div className="flex items-center gap-6 text-xl">
-            <div className="flex items-center gap-2 rounded-xl bg-purple-50 px-4 py-2 text-purple-700">
-              <CircleUserRound size={20} />
-              <span className="font-medium">{profileName}</span>
-              {isMonteur && <span className="text-slate-500">(Monteur)</span>}
-            </div>
-
-            {currentUser && (
-              <button
-                type="button"
-                className="flex items-center gap-2 text-slate-700 hover:text-slate-900"
-                onClick={handleLogout}
-              >
-                <LogOut size={20} />
-                Uitloggen
-              </button>
-            )}
-          </div>
+    <AppLayout user={currentUser!} onLogout={handleLogout}>
+      <div className="space-y-10">
+        <div className="mb-8">
+          <Link href="/dashboard" className="inline-block text-blue-600 hover:underline">
+            ← Terug naar dashboard
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Monteur Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Uw toegewezen afspraken en werkzaamheden
+          </p>
         </div>
-      </header>
 
-      <main className="mx-auto max-w-312.5 px-8 py-10">
-        <Link
-          href="/dashboard/klant"
-          className="mb-6 inline-block text-xl text-blue-600 hover:underline"
-        >
-          ← Terug naar dashboard
-        </Link>
-        <h1 className="text-5xl font-bold">Monteur Dashboard</h1>
-        <p className="mt-3 text-2xl text-slate-600">
-          Uw toegewezen afspraken en werkzaamheden
-        </p>
-
-        {loading && (
-          <p className="mt-6 text-lg text-slate-600">Data laden...</p>
-        )}
-        {errorText && <p className="mt-6 text-lg text-red-600">{errorText}</p>}
-
-        {!loading && !currentUser && (
-          <div className="mt-10 rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200">
-            <CheckCircle2 size={48} className="mx-auto mb-4 text-blue-500" />
-            <p className="text-2xl font-semibold text-slate-700">
-              Je bent niet ingelogd
-            </p>
-            <p className="mt-2 text-lg text-slate-500">
-              Log in als monteur om je toegewezen afspraken te zien.
-            </p>
-          </div>
-        )}
+        {loading && <p className="text-gray-500">Data laden...</p>}
+        {errorText && <p className="text-red-600">{errorText}</p>}
 
         {!loading && currentUser && isMonteur && (
-          <div className="mt-10 space-y-10">
+          <div className="space-y-10">
+            {/** Assigned */}
             <section>
-              <h2 className="mb-4 text-4xl font-bold">
+              <h2 className="text-2xl font-bold mb-4">
                 Toegewezen ({assignedAppointments.length})
               </h2>
               <div className="space-y-5">
-                {assignedAppointments.map((appointment) => (
+                {assignedAppointments.map((a) => (
                   <MonteurAppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
+                    key={a.id}
+                    appointment={a}
                     action={
                       <button
-                        type="button"
-                        onClick={() => handleStartWerkzaamheden(appointment.id)}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 py-3 text-2xl font-medium text-white hover:bg-purple-700"
+                        onClick={() => handleStartWerkzaamheden(a.id)}
+                        className="w-full py-3 bg-purple-600 text-white rounded-xl text-lg font-medium hover:bg-purple-700 flex justify-center items-center gap-2"
                       >
-                        <Wrench size={24} />
-                        Start Werkzaamheden
+                        <Wrench size={20} /> Start Werkzaamheden
                       </button>
                     }
                   />
@@ -444,36 +401,22 @@ export default function MonteurDashboard() {
               </div>
             </section>
 
+            {/** In Progress */}
             <section>
-              <h2 className="mb-4 text-4xl font-bold">
+              <h2 className="text-2xl font-bold mb-4">
                 In Behandeling ({inProgressAppointments.length})
               </h2>
               <div className="space-y-5">
-                {inProgressAppointments.map((appointment) => (
+                {inProgressAppointments.map((a) => (
                   <MonteurAppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
+                    key={a.id}
+                    appointment={a}
                     action={
                       <button
-                        type="button"
-                        onClick={() => openModal(appointment)}
-                        style={{
-                          width: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                          borderRadius: "16px",
-                          backgroundColor: "#16a34a",
-                          padding: "12px",
-                          fontSize: "1.5rem",
-                          fontWeight: 500,
-                          color: "#ffffff",
-                          cursor: "pointer",
-                        }}
+                        onClick={() => openModal(a)}
+                        className="w-full py-3 bg-green-600 text-white rounded-xl text-lg font-medium hover:bg-green-700 flex justify-center items-center gap-2"
                       >
-                        <CheckCircle2 size={24} />
-                        Werkzaamheden Registreren & Voltooien
+                        <CheckCircle2 size={20} /> Werkzaamheden Registreren
                       </button>
                     }
                   />
@@ -481,16 +424,14 @@ export default function MonteurDashboard() {
               </div>
             </section>
 
+            {/** Completed */}
             <section>
-              <h2 className="mb-4 text-4xl font-bold">
+              <h2 className="text-2xl font-bold mb-4">
                 Afgerond ({completedAppointments.length})
               </h2>
               <div className="space-y-5">
-                {completedAppointments.map((appointment) => (
-                  <MonteurAppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
-                  />
+                {completedAppointments.map((a) => (
+                  <MonteurAppointmentCard key={a.id} appointment={a} />
                 ))}
               </div>
             </section>
@@ -499,22 +440,19 @@ export default function MonteurDashboard() {
               inProgressAppointments.length === 0 &&
               completedAppointments.length === 0 &&
               !errorText && (
-                <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200">
-                  <CheckCircle2
-                    size={48}
-                    className="mx-auto mb-4 text-green-500"
-                  />
-                  <p className="text-2xl font-semibold text-slate-700">
+                <div className="text-center bg-white dark:bg-gray-900 p-10 rounded-2xl shadow-md">
+                  <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500" />
+                  <p className="text-xl font-semibold text-gray-800 dark:text-white">
                     Geen werkzaamheden gevonden
                   </p>
-                  <p className="mt-2 text-lg text-slate-500">
+                  <p className="text-gray-500 dark:text-gray-400">
                     Er zijn momenteel geen afspraken aan jou toegewezen.
                   </p>
                 </div>
               )}
           </div>
         )}
-      </main>
+      </div>
 
       <WerkzaamhedenModal
         open={selectedAppointment !== null}
@@ -524,6 +462,6 @@ export default function MonteurDashboard() {
         onClose={closeModal}
         onCompleted={handleCompleted}
       />
-    </div>
+    </AppLayout>
   );
 }
