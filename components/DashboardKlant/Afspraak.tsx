@@ -14,7 +14,10 @@ type FormState = {
 };
 
 export default function Afspraak() {
+  // Router om na het indienen door te sturen naar een andere pagina, dit verstuurt de gebruiker naar het afspraken-overzicht nadat de afspraak succesvol is gemaakt
   const router = useRouter();
+
+  // Formulier state met alle invoervelden (begint leeg)
   const [form, setForm] = useState<FormState>({
     datum: "",
     dienst: "",
@@ -23,16 +26,23 @@ export default function Afspraak() {
     model: "",
     opmerkingen: "",
   });
+
+  // Laadstatus: true tijdens het verzenden naar de database
   const [loading, setLoading] = useState(false);
+
+  // Foutmelding: toont een error als er iets misgaat
   const [error, setError] = useState<string | null>(null);
 
+  // Formatteert invoer automatisch naar DD/MM/YYYY terwijl je typt
   const formatDatum = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 8); // alleen cijfers, max DDMMYYYY
+    const digits = value.replace(/\D/g, "").slice(0, 8);
     if (digits.length <= 2) return digits;
     if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
     return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
   };
 
+  // Werkt het juiste formulierveld bij wanneer de gebruiker iets typt
+  // wat betekent dat als je in het datumveld typt, het automatisch wordt geformatteerd naar DD/MM/YYYY
   const onChange =
     (key: keyof FormState) =>
     (
@@ -45,11 +55,13 @@ export default function Afspraak() {
       setForm((prev) => ({ ...prev, [key]: value }));
     };
 
+  // Verstuurt het formulier naar de database
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    // Haal de ingelogde gebruiker op
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -59,12 +71,14 @@ export default function Afspraak() {
       return;
     }
 
+    // Zet DD/MM/YYYY om naar YYYY-MM-DD voor de database
     const dateParts = form.datum.split("/");
     const formattedDate =
       dateParts.length === 3
         ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
         : form.datum;
 
+    // Sla de afspraak op in de "appointments" tabel
     const { data: appointment, error: insertError } = await supabase
       .from("appointments")
       .insert({
@@ -80,6 +94,7 @@ export default function Afspraak() {
       return;
     }
 
+    // Maak een beschrijving van alle formuliervelden gescheiden door "|"
     const repairBeschrijving = [
       form.dienst,
       `${form.merk} ${form.model}`.trim(),
@@ -87,6 +102,7 @@ export default function Afspraak() {
       form.opmerkingen.trim(),
     ].join(" | ");
 
+    // Sla de reparatie-details op in de "repairs" tabel, gekoppeld aan de afspraak
     const { error: repairError } = await supabase.from("repairs").insert({
       appointment_id: appointment.id,
       beschrijving: repairBeschrijving,
@@ -101,6 +117,7 @@ export default function Afspraak() {
       return;
     }
 
+    // Stuur de gebruiker door naar het afspraken-overzicht
     router.push("/dashboard/afspraken");
   };
 
