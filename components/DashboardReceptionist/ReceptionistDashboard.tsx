@@ -12,6 +12,7 @@ import {
   UserRoundPlus,
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 import AppointmentCard from "./AppointmentCard";
 import AssignMechanic from "./AssignMechanic";
 import { normalizeStatus, toDateLabel } from "./helpers";
@@ -23,6 +24,7 @@ import type {
   RepairRow,
   UserRow,
 } from "./types";
+import AppLayout from "../AppLayout";
 
 export default function ReceptionistDashboard() {
   const router = useRouter();
@@ -38,6 +40,7 @@ export default function ReceptionistDashboard() {
   const [selectedAppointment, setSelectedAppointment] =
     useState<ReceptionistAppointment | null>(null);
   const [selectedMechanic, setSelectedMechanic] = useState("");
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Laad alle dashboarddata bij het openen van de pagina
   useEffect(() => {
@@ -48,6 +51,7 @@ export default function ReceptionistDashboard() {
       // Haal de ingelogde gebruiker op
       const { data: authData } = await supabase.auth.getUser();
       const currentUser = authData.user;
+      setCurrentUser(currentUser);
 
       // Haal afspraken, gebruikers, reparaties en facturen parallel op uit de database
       const [
@@ -133,14 +137,11 @@ export default function ReceptionistDashboard() {
 
       // Stel de profielnaam van de ingelogde receptionist in
       if (currentUser) {
-        const receptionist = userRows.find(
-          (user) => user.id === currentUser.id,
-        );
+        const receptionist = userRows.find((user) => user.id === currentUser.id);
         setProfileName(
           receptionist?.naam ??
-            currentUser.user_metadata?.full_name ??
-            currentUser.email?.split("@")[0] ??
-            "Receptionist",
+          currentUser.email?.split("@")[0] ?? // ← drop user_metadata entirely
+          "Receptionist",
         );
       }
 
@@ -344,32 +345,8 @@ export default function ReceptionistDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <header className="border-b border-slate-200 bg-white px-8 py-4">
-        <div className="mx-auto flex w-full max-w-312.5 items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Car className="text-blue-600" />
-            <span className="text-[38px] font-bold">AutoGarage Pro</span>
-          </div>
-          <div className="flex items-center gap-6 text-xl">
-            <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2 text-blue-700">
-              <CircleUserRound size={20} />
-              <span className="font-medium">{profileName}</span>
-              <span className="text-slate-500">(Receptionist)</span>
-            </div>
-            <button
-              className="flex items-center gap-2 text-slate-700"
-              type="button"
-              onClick={handleLogout}
-            >
-              <LogOut size={20} />
-              Uitloggen
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-312.5 px-8 py-10">
+    <AppLayout user={currentUser!} onLogout={handleLogout}>
+      <main className="mx-auto max-w-312.5 px-8 py-10 space-y-10">
         <Link
           href="/dashboard"
           className="mb-6 inline-block text-blue-600 hover:underline text-xl"
@@ -507,6 +484,6 @@ export default function ReceptionistDashboard() {
         onClose={closeAssign}
         onAssign={handleAssignMechanic}
       />
-    </div>
+    </AppLayout>
   );
 }

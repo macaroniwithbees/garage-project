@@ -6,7 +6,7 @@ import { Car, CircleUser, LogOut } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
 type NavbarProps = {
-  user: User;
+  user: User | null;
   onLogout: () => void;
 };
 
@@ -14,9 +14,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
 
   const displayName =
-    user.user_metadata?.full_name ||
-    user.email?.split("@")[0] ||
-    "Gebruiker";
+    user?.email?.split("@")[0] || "Gebruiker";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

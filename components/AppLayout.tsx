@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import type { User } from "@supabase/supabase-js";
 
 type Props = {
-  user: User;
+  user: User | null;
   onLogout: () => void;
   children: React.ReactNode;
 };
