@@ -11,10 +11,12 @@ export type Role = typeof ROLES[keyof typeof ROLES];
 export type AppRoute =
   | "/dashboard/admin"
   | "/dashboard/mechanic"
-  | "/dashboard/receptionist";
+  | "/dashboard/receptionist"
+  | "/dashboard/klant";
 
 export const routeRoles: Record<AppRoute, Role[]> = {
   "/dashboard/admin": ["admin", "eigenaar"],
   "/dashboard/mechanic": ["monteur"],
   "/dashboard/receptionist": ["receptionist"],
+  "/dashboard/klant": ["klant"],
 };
