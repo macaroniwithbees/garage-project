@@ -1,7 +1,9 @@
 "use client";
+
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { createBrowserClient } from "@supabase/ssr";
+import { routeRoles, AppRoute, Role } from "@/lib/roles";
 
 export default function DashboardRedirect() {
   const router = useRouter();
@@ -10,13 +12,16 @@ export default function DashboardRedirect() {
     let cancelled = false;
 
     async function redirect() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+      );
+
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (cancelled) return;
 
-      if (!session) {
+      if (!user) {
         router.replace("/login");
         return;
       }
@@ -24,26 +29,26 @@ export default function DashboardRedirect() {
       const { data: profile } = await supabase
         .from("users")
         .select("rol")
-        .eq("id", session.user.id)
+        .eq("id", user.id)
         .single();
 
       if (cancelled) return;
 
-      if (!profile) {
+      if (!profile?.rol) {
         router.replace("/login");
         return;
       }
 
-      if (profile.rol === "admin" || profile.rol === "eigenaar")
-        router.replace("/dashboard/admin");
-      else router.replace("/dashboard/klant");
+      const role: Role = profile.rol;
+      const matchedRoute = (Object.keys(routeRoles) as AppRoute[]).find(
+        (route) => routeRoles[route].includes(role)
+      );
+
+      router.replace(matchedRoute ?? "/login");
     }
 
     redirect();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [router]);
 
   return <p className="text-center mt-10">Even laden...</p>;

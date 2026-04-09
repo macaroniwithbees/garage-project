@@ -9,8 +9,8 @@ export default function Login() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
         router.push("/dashboard");
       }
     });
