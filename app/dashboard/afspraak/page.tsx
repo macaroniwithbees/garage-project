@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Afspraak from "@/components/DashboardKlant/Afspraak";
-import Navbar from "@/components/Navbar";
+import AppLayoutNarrow from "@/components/AppLayoutNarrow";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
@@ -35,7 +35,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-blue-50">
-      <Navbar user={user} onLogout={handleLogout} />
+      <AppLayoutNarrow user={user} onLogout={handleLogout} >
 
       <main className="p-6">
         <div className="mx-auto max-w-4xl">
@@ -45,6 +45,7 @@ export default function Page() {
           <Afspraak />
         </div>
       </main>
+    </AppLayoutNarrow>
     </div>
   );
 }

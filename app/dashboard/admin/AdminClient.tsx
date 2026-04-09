@@ -1,9 +1,10 @@
+"use client";
 
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import AppLayout from "@/components/AppLayout";
 
 // ---- CHARTS ----
 import {
@@ -149,10 +150,7 @@ export default function AdminPage() {
   if (!user) return <p className="text-center mt-10">Je bent nog niet ingelogd</p>;
 
   return (
-    <div className="min-h-screen bg-blue-50">
-      <Navbar user={user} onLogout={handleLogout} />
-
-      <div className="max-w-6xl mx-auto px-6 py-10">
+    <AppLayout user={user} onLogout={handleLogout}>
         {/* header + date range picker */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div>
@@ -210,7 +208,6 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </AppLayout>
   );
 }
