@@ -26,6 +26,13 @@ type Repair = {
   appointments: {
     date: string;
   }[] | null;
+
+  repair_materials?: {
+    hoeveelheid: number | null;
+    materials: {
+      prijs: number | null;
+    }[];
+  }[];
 };
 
 type ChartData = {
@@ -73,7 +80,9 @@ export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [monthlyStats, setMonthlyStats] = useState<ChartData[]>([]);
   const [hoursData, setHoursData] = useState<ChartData[]>([]);
+  const [repairsCountData, setRepairsCountData] = useState<ChartData[]>([]);
   const [startDate, setStartDate] = useState<string>("");
+  const [materialsData, setMaterialsData] = useState<ChartData[]>([]);
   const [endDate, setEndDate] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -96,8 +105,19 @@ export default function AdminPage() {
 
     const { data: repairs, error: repairsError } = await supabase
       .from("repairs")
-      .select("kosten, uren, appointments(date)");
-    
+      .select(`
+        kosten,
+        uren,
+        appointments (
+          date
+        ),
+        repair_materials (
+          hoeveelheid,
+          materials (
+            prijs
+          )
+        )
+  `);
     console.log("repairs data:", repairs); // toegevoegd voor debugging
     console.log("repairs error:", repairsError);
 
@@ -113,7 +133,30 @@ export default function AdminPage() {
       const appt = row.appointments as any;
       if (Array.isArray(appt)) return appt[0]?.date ?? null;
       return appt?.date ?? null;
-    };    
+    };
+
+    const getMaterialCost = (row: Repair) => {
+      if (!row.repair_materials) return 0;
+
+      return row.repair_materials.reduce((total, rm) => {
+        const hoeveelheid = rm.hoeveelheid || 0;
+
+        let materialenArray: { prijs: number | null }[] = [];
+
+        if (Array.isArray(rm.materials)) {
+          materialenArray = rm.materials;
+        } else if (rm.materials) {
+          materialenArray = [rm.materials];
+        }
+
+        const materiaalPrijs = materialenArray.reduce(
+          (sum, m) => sum + (m.prijs || 0),
+          0
+        );
+
+        return total + hoeveelheid * materiaalPrijs;
+      }, 0);
+    };
 
     setMonthlyStats(
       groupByMonth<Repair>(
@@ -128,6 +171,24 @@ export default function AdminPage() {
       groupByMonth<Repair>(
         repairs as unknown as Repair[],
         (row) => Number(row.uren) || 0,
+        getDate,
+        start,
+        end
+      )
+    );
+    setRepairsCountData(
+      groupByMonth<Repair>(
+        repairs as unknown as Repair[],
+        () => 1, // elke repair telt als 1
+        getDate,
+        start,
+        end
+      )
+    );
+    setMaterialsData(
+      groupByMonth(
+        repairs,
+        (row) => getMaterialCost(row),
         getDate,
         start,
         end
@@ -151,63 +212,95 @@ export default function AdminPage() {
 
   return (
     <AppLayout user={user} onLogout={handleLogout}>
-        {/* header + date range picker */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Eigenaar Dashboard</h1>
-            <p className="text-gray-600">Inzicht in omzet, uren en prestaties</p>
-          </div>
+      {/* header + date range picker */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Eigenaar Dashboard</h1>
+          <p className="text-gray-600">Inzicht in omzet, uren en prestaties</p>
+        </div>
 
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-black text-sm bg-white shadow-sm"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-black text-sm bg-white shadow-sm"
-            />
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-black text-sm bg-white shadow-sm"
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-black text-sm bg-white shadow-sm"
+          />
+        </div>
+      </div>
+
+      {/* chart cards */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* profit */}
+        <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+          <h2 className="text-gray-800 font-semibold text-lg mb-2">Omzet</h2>
+          <div style={{ width: "100%", height: "240px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyStats}>
+                <Legend />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => `€${value}`} />
+                <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} name="Omzet" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* chart cards */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* profit */}
-          <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
-            <h2 className="text-gray-800 font-semibold text-lg mb-2">Omzet</h2>
-            <div style={{ width: "100%", height: "240px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyStats}>
-                  <Legend />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `€${value}`} />
-                  <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} name="Omzet" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* hours */}
-          <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
-            <h2 className="text-gray-800 font-semibold text-lg mb-2">Gewerkte Uren</h2>
-            <div style={{ width: "100%", height: "240px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hoursData}>
-                  <Legend />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `${value} uur`} />
-                  <Bar dataKey="value" fill="#10b981" name="Uren" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+        {/* hours */}
+        <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+          <h2 className="text-gray-800 font-semibold text-lg mb-2">Gewerkte Uren</h2>
+          <div style={{ width: "100%", height: "240px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={hoursData}>
+                <Legend />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => `${value} uur`} />
+                <Bar dataKey="value" fill="#10b981" name="Uren" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      </AppLayout>
+
+        {/* repairs count */}
+        <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+          <h2 className="text-gray-800 font-semibold text-lg mb-2">Aantal Reparaties</h2>
+          <div style={{ width: "100%", height: "240px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={repairsCountData}>
+                <Legend />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => `${value} reparaties`} />
+                <Bar dataKey="value" fill="#f59e0b" name="Reparaties" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        {/* materials */}
+        <div className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+          <h2 className="text-gray-800 font-semibold text-lg mb-2">Materiaal Kosten</h2>
+          <div style={{ width: "100%", height: "240px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={materialsData}>
+                <Legend />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => `€${value}`} />
+                <Line type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2} name="Materialen" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </AppLayout>
   );
 }
