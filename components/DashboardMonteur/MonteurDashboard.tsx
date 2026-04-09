@@ -31,19 +31,14 @@ const toDateLabel = (dateValue: string | null): string | undefined => {
   return new Date(dateValue).toLocaleDateString("nl-NL");
 };
 
-// Vertaalt de database status naar een van de drie mogelijke statussen
+// Vertaalt de database status naar een van de drie mogelijke st atussen
 const normalizeStatus = (
   status: string | null,
 ): MonteurAppointment["status"] => {
   if (status === "in behandeling" || status === "in_behandeling")
     return "bezig";
   if (status === "klaar_voor_ophalen" || status === "afgerond") return "klaar";
-  if (
-    status === "ingepland" ||
-    status === "bevestigd" ||
-    status === "in_afwachting"
-  )
-    return "toegewezen";
+  if (status === "ingepland" || status === "in_afwachting") return "toegewezen";
   return "toegewezen";
 };
 
