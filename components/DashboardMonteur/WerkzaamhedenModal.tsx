@@ -124,10 +124,6 @@ export default function WerkzaamhedenModal({
 
   // Sla werkzaamheden op: reparatie, materialen, factuur en update de afspraakstatus
   const handleSave = async () => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const { data: userData } = await supabase.auth.getUser();
-    console.log('Session:', sessionData.session?.user?.id);
-    console.log('User:', userData.user?.id);
 
     if (!isMonteur) {
       setErrorText("Alleen monteurs kunnen werkzaamheden registreren.");
