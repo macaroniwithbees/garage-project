@@ -124,6 +124,7 @@ export default function WerkzaamhedenModal({
 
   // Sla werkzaamheden op: reparatie, materialen, factuur en update de afspraakstatus
   const handleSave = async () => {
+
     if (!isMonteur) {
       setErrorText("Alleen monteurs kunnen werkzaamheden registreren.");
       return;
@@ -175,16 +176,15 @@ export default function WerkzaamhedenModal({
       }
 
       // Maak of update de factuur voor deze afspraak
-      const { error: invoiceError } = await supabase.from("invoices").upsert(
-        {
-          appointment_id: appointmentId,
-          totaalbedrag: totaal,
-          betaald: "nee",
-        },
-        { onConflict: "appointment_id" },
-      );
-      if (invoiceError)
-        throw new Error(`Factuur opslaan mislukt: ${invoiceError.message}`);
+      const invoiceRes = await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointment_id: appointmentId, totaalbedrag: totaal }),
+      });
+      if (!invoiceRes.ok) {
+        const { error } = await invoiceRes.json();
+        throw new Error(`Factuur opslaan mislukt: ${error}`);
+      }
 
       // Zet afspraakstatus op "klaar_voor_ophalen"
       const statusCandidates = ["klaar_voor_ophalen"];
@@ -362,7 +362,7 @@ export default function WerkzaamhedenModal({
             </h3>
 
             {selectedHandelingen.length === 0 &&
-            selectedMaterials.length === 0 ? (
+              selectedMaterials.length === 0 ? (
               <p className="text-center text-base text-slate-400">
                 Geen werkzaamheden geselecteerd
               </p>
