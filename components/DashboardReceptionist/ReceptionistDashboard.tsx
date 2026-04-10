@@ -137,11 +137,13 @@ export default function ReceptionistDashboard() {
 
       // Stel de profielnaam van de ingelogde receptionist in
       if (currentUser) {
-        const receptionist = userRows.find((user) => user.id === currentUser.id);
+        const receptionist = userRows.find(
+          (user) => user.id === currentUser.id,
+        );
         setProfileName(
           receptionist?.naam ??
-          currentUser.email?.split("@")[0] ?? // ← drop user_metadata entirely
-          "Receptionist",
+            currentUser.email?.split("@")[0] ?? // ← drop user_metadata entirely
+            "Receptionist",
         );
       }
 
@@ -347,12 +349,6 @@ export default function ReceptionistDashboard() {
   return (
     <AppLayout user={currentUser!} onLogout={handleLogout}>
       <main className="mx-auto max-w-312.5 px-8 py-10 space-y-10">
-        <Link
-          href="/dashboard"
-          className="mb-6 inline-block text-blue-600 hover:underline text-xl"
-        >
-          ← Terug naar dashboard
-        </Link>
         <h1 className="text-5xl font-bold">Receptionist Dashboard</h1>
         <p className="mt-3 text-2xl text-slate-600">
           Beheer afspraken en communiceer met klanten

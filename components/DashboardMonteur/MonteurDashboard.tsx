@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   Car,
   CheckCircle2,
@@ -56,13 +55,13 @@ const STATUS_COLORS: Record<MonteurAppointment["status"], string> = {
   bezig: "bg-purple-100 text-purple-700",
   klaar: "bg-green-100 text-green-700",
 };
-
+// Props voor de afspraakkaart component die een afspraak en een actieknop laat zien
 type AppointmentCardProps = {
   appointment: MonteurAppointment;
   action?: React.ReactNode;
 };
 
-// Kaart component dat één afspraak toont met optionele actieknop
+// Kaart component dat één afspraak toont met actieknop
 function MonteurAppointmentCard({ appointment, action }: AppointmentCardProps) {
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -136,7 +135,7 @@ export default function MonteurDashboard() {
       const { data: authData } = await supabase.auth.getUser();
       const authUser = authData.user;
       setCurrentUser(authUser);
-
+      // haalt de id en naam van de monteur op als de gebruiker een monteur is, anders blijven ze null en "Monteur" voor de naam.
       let monteurId: string | null = null;
       let monteurNaam = "Monteur";
 
@@ -248,7 +247,8 @@ export default function MonteurDashboard() {
             status: string | null;
             user_id: string | null;
           };
-          //daarna returnen we een nieuw object met alle benodigde info voor de monteur, waarbij we de maps gebruiken om de dienst, voertuig en opmerkingen te koppelen aan de juiste afspraak-ID's.
+          //daarna returnen we een nieuw object met alle benodigde info voor de monteur,
+          // waarbij we de maps gebruiken om de dienst, voertuig en opmerkingen te koppelen aan de juiste afspraak-ID's.
           return {
             id: r.id,
             voertuig: voertuigById.get(r.id) ?? `Voertuig #${r.id}`,
@@ -359,10 +359,9 @@ export default function MonteurDashboard() {
     <AppLayout user={currentUser!} onLogout={handleLogout}>
       <div className="space-y-10">
         <div className="mb-8">
-          <Link href="/dashboard" className="inline-block text-blue-600 hover:underline">
-            ← Terug naar dashboard
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Monteur Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+            Monteur Dashboard
+          </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Uw toegewezen afspraken en werkzaamheden
           </p>
@@ -436,7 +435,10 @@ export default function MonteurDashboard() {
               completedAppointments.length === 0 &&
               !errorText && (
                 <div className="text-center bg-white dark:bg-gray-900 p-10 rounded-2xl shadow-md">
-                  <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500" />
+                  <CheckCircle2
+                    size={48}
+                    className="mx-auto mb-4 text-green-500"
+                  />
                   <p className="text-xl font-semibold text-gray-800 dark:text-white">
                     Geen werkzaamheden gevonden
                   </p>
