@@ -92,6 +92,7 @@ function AfspraakCard({
   onReview: () => void;
   heeftReview: boolean;
 }) {
+  // Controleer of er een factuur bij deze afspraak hoort en of die al betaald is
   const heeftFactuur =
     afspraak.invoice && afspraak.invoice.totaalbedrag != null;
   const isBetaald = afspraak.invoice?.betaald === "ja";
@@ -165,7 +166,7 @@ function AfspraakCard({
         </div>
       )}
 
-      {/* Review knop */}
+      {/* Review knop: alleen zichtbaar na betaling en als er nog geen review is */}
       {isBetaald && !heeftReview && (
         <button
           type="button"
@@ -405,24 +406,21 @@ export default function MijnAfspraken() {
   const handleBetaal = async () => {
     if (!betaalModal) return;
     setSaving(true);
+    // Stuur betaling naar de server-side API route (omzeilt RLS)
+    const res = await fetch("/api/invoices", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appointment_id: betaalModal.appointmentId }),
+    });
 
-    const { error } = await supabase
-      .from("invoices")
-      .update({ betaald: "ja" })
-      .eq("appointment_id", betaalModal.appointmentId);
-
-    if (error) {
-      setErrorText(`Betaling mislukt: ${error.message}`);
+    if (!res.ok) {
+      const { error } = await res.json();
+      setErrorText(`Betaling mislukt: ${error}`);
       setSaving(false);
       return;
     }
 
-    // Status naar afgerond na betaling
-    await supabase
-      .from("appointments")
-      .update({ status: "afgerond" })
-      .eq("id", betaalModal.appointmentId);
-
+    // Update lokale state zodat de UI direct reageert zonder te hoeven refreshen
     setAfspraken((prev) =>
       prev.map((a) =>
         a.id === betaalModal.appointmentId
@@ -466,6 +464,7 @@ export default function MijnAfspraken() {
         )}
       </div>
 
+      {/* Betaal-popup: toont het bedrag en laat de gebruiker betalen */}
       <BetaalModal
         open={betaalModal !== null}
         bedrag={betaalModal?.bedrag ?? 0}
@@ -474,6 +473,7 @@ export default function MijnAfspraken() {
         saving={saving}
       />
 
+      {/* Review-popup: laat de gebruiker een review achterlaten na betaling */}
       <ReviewModal
         open={reviewModalOpen}
         userId={userId}

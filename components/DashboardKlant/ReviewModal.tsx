@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 
 type ReviewModalProps = {
   open: boolean;
@@ -59,9 +58,10 @@ export default function ReviewModal({
   const [saving, setSaving] = useState(false);
   const [errorText, setErrorText] = useState("");
 
+  // Toon niets als de modal dicht is of als er geen gebruiker is
   if (!open || userId === null) return null;
 
-  // Sla de review op in de database
+  // Sla de review op via de server-side API route (omzeilt RLS)
   const handleSubmit = async () => {
     if (rating === 0) {
       setErrorText("Selecteer een beoordeling.");
@@ -71,19 +71,26 @@ export default function ReviewModal({
     setSaving(true);
     setErrorText("");
 
-    const { error } = await supabase.from("reviews").insert({
-      user_id: userId,
-      rating,
-      comment: comment.trim() || null,
+    // Stuur de review naar de server-side API; via de admin client zodat RLS wordt omzeild
+    const res = await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        rating,
+        comment: comment.trim() || null,
+      }),
     });
 
     setSaving(false);
 
-    if (error) {
-      setErrorText(`Review opslaan mislukt: ${error.message}`);
+    if (!res.ok) {
+      const { error } = await res.json();
+      setErrorText(`Review opslaan mislukt: ${error}`);
       return;
     }
 
+    // Reset de velden en meld aan de parent dat de review is verstuurd
     setRating(0);
     setComment("");
     onSubmitted();
