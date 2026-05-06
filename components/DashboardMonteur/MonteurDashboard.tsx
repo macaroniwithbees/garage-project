@@ -117,7 +117,6 @@ export default function MonteurDashboard() {
 
   // State voor afspraken, gebruikersinfo, laden en fouten
   const [appointments, setAppointments] = useState<MonteurAppointment[]>([]);
-  const [profileName, setProfileName] = useState("Monteur");
   const [loading, setLoading] = useState(true);
   const [errorText, setErrorText] = useState("");
   const [selectedAppointment, setSelectedAppointment] =
@@ -135,9 +134,8 @@ export default function MonteurDashboard() {
       const { data: authData } = await supabase.auth.getUser();
       const authUser = authData.user;
       setCurrentUser(authUser);
-      // haalt de id en naam van de monteur op als de gebruiker een monteur is, anders blijven ze null en "Monteur" voor de naam.
+      // haalt de id van de monteur op als de gebruiker een monteur is
       let monteurId: string | null = null;
-      let monteurNaam = "Monteur";
 
       // Controleer of de gebruiker een monteur is
       if (authUser) {
@@ -152,18 +150,15 @@ export default function MonteurDashboard() {
             id: string;
             naam: string | null;
             rol: string | null;
-          }; //als de gebruiker een monteur is, sla dan de ID en naam op voor later gebruik
+          }; //als de gebruiker een monteur is, sla dan de ID op voor later gebruik
           // Wat betekent dat we alleen afspraken gaan laden als de gebruiker een monteur is.
           if (row.rol?.toLowerCase() === "monteur") {
             setIsMonteur(true);
             monteurId = row.id;
-            monteurNaam =
-              row.naam ?? authUser.email?.split("@")[0] ?? "Monteur";
           }
         }
       }
 
-      setProfileName(monteurNaam);
       // Als er geen ingelogde gebruiker is of de gebruiker is geen monteur, stop dan met laden en laat een lege lijst zien
       if (!authUser || !monteurId) {
         setAppointments([]);
